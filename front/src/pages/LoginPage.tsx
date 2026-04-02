@@ -14,17 +14,11 @@ const LoginPage = () => {
   const { login } = useApp();
   const navigate = useNavigate();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (pseudo.trim().length === 0) {
-      setError("Entre ton pseudo !");
-      return;
-    }
-    if (password.length < 1) {
-      setError("Entre un mot de passe !");
-      return;
-    }
-    const ok = login(pseudo, password);
+    if (!pseudo.trim()) return setError("Entre ton pseudo !");
+    if (!password) return setError("Entre un mot de passe !");
+    const ok = await login(pseudo, password);
     if (ok) navigate("/vote");
     else setError("Erreur de connexion");
   };
@@ -64,7 +58,7 @@ const LoginPage = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
-          className="bg-card/60 backdrop-blur-sm border border-border rounded-xl p-6 mb-8"
+          className="bg-card/60 backdrop-blur-sm border border-border rounded-xl p-6 mb-4"
         >
           <div className="space-y-4">
             <div>
@@ -97,6 +91,16 @@ const LoginPage = () => {
             <NeonButton type="submit" className="w-full">Se connecter</NeonButton>
           </div>
         </motion.form>
+
+        {/* Créer un compte */}
+        <div className="flex justify-center mb-6">
+          <button
+            className="text-sm text-primary underline hover:text-neon-yellow transition-colors"
+            onClick={() => navigate("/register")}
+          >
+            Créer un compte
+          </button>
+        </div>
 
         {/* Goodies section */}
         <motion.div

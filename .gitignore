@@ -1,0 +1,26 @@
+# === React Front ===
+# Node modules
+front/node_modules/
+# Build / production
+front/build/
+# Logs
+front/npm-debug.log*
+front/yarn-debug.log*
+front/yarn-error.log*
+
+# === Python Back ===
+# Virtual environment
+back/venv/
+# Python cache
+back/__pycache__/
+back/**/*.pyc
+# Logs
+back/*.log
+
+# === OS / Editor ===
+# macOS
+.DS_Store
+# Windows
+Thumbs.db
+# VSCode
+.vscode/
