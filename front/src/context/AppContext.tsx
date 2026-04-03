@@ -32,7 +32,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   // ======== LOGIN =========
   const login = async (pseudo: string, password: string) => {
     try {
-      const res = await fetch("http://127.0.0.1:8000/users/login", {
+      const res = await fetch("https://eurovision-back.onrender.com/users/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ pseudo, password }),
@@ -56,7 +56,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   // ======== REGISTER =========
   const register = async (pseudo: string, email: string, password: string) => {
     try {
-      const res = await fetch("http://127.0.0.1:8000/users/register", {
+      const res = await fetch("https://eurovision-back.onrender.com/users/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ pseudo, email, password }),
