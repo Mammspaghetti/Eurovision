@@ -1,15 +1,16 @@
-import { createContext, useContext, useState, ReactNode } from "react";
+// AppContext.tsx
+import { createContext, useContext, useState, ReactNode, useEffect } from "react";
 import { Artist } from "@/data/artists";
 
 interface User {
   pseudo: string;
-  token?: string; // <- ajouter token pour l'auth backend
+  token?: string;
 }
 
 interface AppContextType {
   user: User | null;
   login: (pseudo: string, password: string) => Promise<boolean>;
-  register: (pseudo: string, password: string) => Promise<boolean>;
+  register: (pseudo: string, email: string, password: string) => Promise<boolean>;
   logout: () => void;
   ranking: Artist[] | null;
   submitRanking: (ranked: Artist[]) => void;
@@ -17,7 +18,6 @@ interface AppContextType {
 }
 
 const AppContext = createContext<AppContextType | null>(null);
-
 export const useApp = () => {
   const ctx = useContext(AppContext);
   if (!ctx) throw new Error("useApp must be within AppProvider");
@@ -29,26 +29,23 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [ranking, setRanking] = useState<Artist[] | null>(null);
   const [hasVoted, setHasVoted] = useState(false);
 
-  // ==============================
-  // LOGIN → modifier ici pour appeler ton backend
-  // ==============================
+  // ======== LOGIN =========
   const login = async (pseudo: string, password: string) => {
-    // MOCK
-    if (pseudo === "test" && password === "test") {
-      setUser({ pseudo: "test", token: "fake-token" });
-      return true;
-    }
     try {
-      const res = await fetch("http://127.0.0.1:8000/login", {
+      const res = await fetch("http://127.0.0.1:8000/users/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: pseudo, password }), // correspond à FastAPI
+        body: JSON.stringify({ pseudo, password }),
       });
 
       if (!res.ok) return false;
 
       const data = await res.json();
-      setUser({ pseudo, token: data.access_token }); // on stocke le token
+      console.log("Response data:", data);
+      // stocker pseudo + token
+      setUser({ pseudo: data.pseudo, token: data.token });
+      localStorage.setItem("token", data.token);
+      localStorage.setItem("pseudo", data.pseudo);
       return true;
     } catch (err) {
       console.error("Login failed:", err);
@@ -56,15 +53,13 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  // ==============================
-  // REGISTER → optionnel si tu veux créer un compte depuis React
-  // ==============================
-  const register = async (pseudo: string, password: string) => {
+  // ======== REGISTER =========
+  const register = async (pseudo: string, email: string, password: string) => {
     try {
-      const res = await fetch("http://127.0.0.1:8000/register", {
+      const res = await fetch("http://127.0.0.1:8000/users/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: pseudo, password }),
+        body: JSON.stringify({ pseudo, email, password }),
       });
       return res.ok;
     } catch (err) {
@@ -73,18 +68,23 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  // ==============================
-  // LOGOUT
-  // ==============================
+  // ======== LOGOUT =========
   const logout = () => {
     setUser(null);
     setRanking(null);
     setHasVoted(false);
+    localStorage.removeItem("token");
+    localStorage.removeItem("pseudo");
   };
 
-  // ==============================
-  // SUBMIT RANKING
-  // ==============================
+  // ======== PERSISTANCE AU RELOAD =========
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    const pseudo = localStorage.getItem("pseudo");
+    if (token && pseudo) setUser({ pseudo, token });
+  }, []);
+
+  // ======== SUBMIT RANKING =========
   const submitRanking = (ranked: Artist[]) => {
     setRanking(ranked);
     setHasVoted(true);
