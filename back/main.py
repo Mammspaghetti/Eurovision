@@ -13,6 +13,7 @@ origins = [
     "http://127.0.0.1:3000",
     "http://localhost:8080",  # ajoute ton port actuel
     "http://127.0.0.1:8080",
+    "https://eurovision-back.onrender.com" # PROD
 ]
 
 app.add_middleware(
