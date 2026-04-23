@@ -53,62 +53,83 @@ const LoginPage = () => {
             Fais tes pronostics et gagne des goodies !
           </p>
         </div>
-        {/* Kermit présentateur */}
-        <motion.img
-          src="/kermit.png" // mets ton image dans /public
-          alt="Kermit presenter"
-          initial={{ opacity: 0, y: -40 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4, duration: 0.6 }}
-          className="w-32 mx-auto mb-4 drop-shadow-xl"
-        />
+
         {/* Login form */}
         <motion.form
           onSubmit={handleSubmit}
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
-          className="bg-card/60 backdrop-blur-sm border border-border rounded-xl p-6 mb-4"
+          className="bg-card/70 backdrop-blur-md border border-border/50 rounded-2xl p-8 mb-6 shadow-2xl"
         >
-          <div className="space-y-4">
+          <div className="space-y-5">
+
+            {/* Pseudo */}
             <div>
-              <label className="block text-sm font-medium text-muted-foreground mb-1.5">Pseudo</label>
+              <label className="block text-sm font-medium text-muted-foreground mb-1.5">
+                Pseudo
+              </label>
               <input
                 type="text"
                 value={pseudo}
                 onChange={(e) => { setPseudo(e.target.value); setError(""); }}
-                className="w-full px-4 py-3 rounded-lg bg-input border border-border text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all"
+                className="w-full px-4 py-3 rounded-xl bg-input/80 border border-border text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-pink-500/60 focus:border-pink-500 transition-all shadow-inner"
                 placeholder="Ton pseudo"
                 maxLength={30}
               />
             </div>
+
+            {/* Password */}
             <div>
-              <label className="block text-sm font-medium text-muted-foreground mb-1.5">Mot de passe</label>
+              <label className="block text-sm font-medium text-muted-foreground mb-1.5">
+                Mot de passe
+              </label>
               <input
                 type="password"
                 value={password}
                 onChange={(e) => { setPassword(e.target.value); setError(""); }}
-                className="w-full px-4 py-3 rounded-lg bg-input border border-border text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all"
+                className="w-full px-4 py-3 rounded-xl bg-input/80 border border-border text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-yellow-400/60 focus:border-yellow-400 transition-all shadow-inner"
                 placeholder="Mot de passe"
                 maxLength={50}
               />
             </div>
+
+            {/* Error */}
             {error && (
-              <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-accent text-sm">
+              <motion.p
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="text-red-400 text-sm font-medium"
+              >
                 {error}
               </motion.p>
             )}
-            <NeonButton type="submit" className="w-full">Se connecter</NeonButton>
+
+            {/* Login button */}
+            <NeonButton
+              type="submit"
+              className="w-full py-3 text-lg font-semibold tracking-wide"
+            >
+              🚀 Se connecter
+            </NeonButton>
+
           </div>
         </motion.form>
 
-        {/* Créer un compte */}
-        <div className="flex justify-center mb-6">
+        {/* Divider */}
+        <div className="flex items-center gap-4 mb-6">
+          <div className="flex-1 h-px bg-border/50"></div>
+          <span className="text-xs text-muted-foreground">ou</span>
+          <div className="flex-1 h-px bg-border/50"></div>
+        </div>
+
+        {/* Register button */}
+        <div className="flex justify-center">
           <button
-            className="text-sm text-primary underline hover:text-neon-yellow transition-colors"
+            className="px-6 py-2.5 rounded-xl border border-pink-500/40 text-pink-400 font-semibold backdrop-blur-sm hover:bg-pink-500 hover:text-white hover:shadow-lg hover:shadow-pink-500/30 transition-all duration-200"
             onClick={() => navigate("/register")}
           >
-            Créer un compte
+            ✨ Créer un compte
           </button>
         </div>
 
@@ -117,14 +138,14 @@ const LoginPage = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.5 }}
-          className="bg-card/40 backdrop-blur-sm border border-border rounded-xl p-6"
+          className="mt-10 bg-card/40 backdrop-blur-sm border border-border rounded-xl p-6"
         >
           <div className="flex items-center gap-2 mb-4">
             <Gift className="w-5 h-5 text-neon-yellow" />
             <h2 className="font-display text-xl font-semibold">Goodies à gagner</h2>
           </div>
 
-          <GoodiesCarousel />
+          <GoodiesCarousel/>
 
           <div className="flex items-center gap-2 text-sm text-muted-foreground mt-4">
             <Trophy className="w-4 h-4 text-gold" />

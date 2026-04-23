@@ -217,11 +217,26 @@ const VotePage = () => {
         <NeonButton
           onClick={handleSubmit}
           disabled={!isVoteOpen}
-          className="w-full"
+          className="w-full py-3 text-lg font-semibold"
         >
-          {isBeforeVote && "Vote pas encore ouvert"}
-          {isVoteOpen && "Valider mon classement ✓"}
-          {isVoteClosed && "Temps écoulé !"}
+          {isBeforeVote && "⏳ Vote pas encore ouvert"}
+          {isVoteOpen && "🚀 Valider mon classement"}
+          {isVoteClosed && "❌ Temps écoulé"}
+        </NeonButton>
+        <NeonButton
+          onClick={() => {
+            localStorage.setItem("vote_draft", JSON.stringify(items));
+          }}
+          className="
+            w-full mt-3 py-3
+            bg-transparent border border-pink-500/40
+            text-pink-400 font-medium
+            hover:bg-pink-500 hover:text-white
+            hover:shadow-lg hover:shadow-pink-500/30
+            transition-all duration-200
+          "
+        >
+          💾 Enregistrer mon vote
         </NeonButton>
 
       </motion.div>

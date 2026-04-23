@@ -9,7 +9,7 @@ export interface Artist {
 }
 
 export const artists: Artist[] = [
-  { id: "1", country: "Albanie", artist: "Alis", song: "Nân", flag: "🇦🇱", youtubeUrl: "https://www.youtube.com/watch?v=-2cZ-Ba6ygg", photoUrl: "https://source.unsplash.com/featured/?singer,Alis" },
+  { id: "1", country: "Albanie", artist: "Alis", song: "Nân", flag: "🇦🇱", youtubeUrl: "https://www.youtube.com/watch?v=-2cZ-Ba6ygg", photoUrl: "https://commons.wikimedia.org/w/index.php?search=Alis&title=Special%3AMediaSearch&type=image" },
   { id: "2", country: "Arménie", artist: "SIMÓN", song: "Paloma Rumba", flag: "🇦🇲", youtubeUrl: "https://www.youtube.com/watch?v=5EXoK-lgocw", photoUrl: "https://source.unsplash.com/featured/?singer,SIMON" },
   { id: "3", country: "Australie", artist: "Delta Goodrem", song: "Eclipse", flag: "🇦🇺", youtubeUrl: "https://www.youtube.com/watch?v=EUMCr1pnaMY", photoUrl: "https://source.unsplash.com/featured/?singer,DeltaGoodrem" },
   { id: "4", country: "Autriche", artist: "COSMÓ", song: "Tanzschein", flag: "🇦🇹", youtubeUrl: "https://www.youtube.com/watch?v=SPpL_ZuRTZY", photoUrl: "https://source.unsplash.com/featured/?singer,COSMO" },
@@ -22,7 +22,9 @@ export const artists: Artist[] = [
   { id: "11", country: "Danemark", artist: "Søren Torpegaard Lund", song: "Før vi går hjem", flag: "🇩🇰", youtubeUrl: "https://www.youtube.com/results?search_query=Søren+Torpegaard+Lund+Før+vi+går+hjem+Eurovision+2026", photoUrl: "https://source.unsplash.com/featured/?singer,SorenLund" },
   { id: "12", country: "Estonie", artist: "Vanilla Ninja", song: "Too Epic To Be True", flag: "🇪🇪", youtubeUrl: "https://www.youtube.com/results?search_query=Vanilla+Ninja+Too+Epic+To+Be+True+Eurovision+2026", photoUrl: "https://source.unsplash.com/featured/?singer,VanillaNinja" },
   { id: "13", country: "Finlande", artist: "Linda Lampenius & Pete Parkkonen", song: "Liekinheitin", flag: "🇫🇮", youtubeUrl: "https://www.youtube.com/results?search_query=Linda+Lampenius+Pete+Parkkonen+Liekinheitin+Eurovision+2026", photoUrl: "https://source.unsplash.com/featured/?singer,LindaLampenius" },
-  { id: "14", country: "France", artist: "Monroe", song: "Regarde !", flag: "🇫🇷", youtubeUrl: "https://www.youtube.com/results?search_query=Monroe+Regarde+Eurovision+2026", photoUrl: "https://source.unsplash.com/featured/?singer,Monroe" },
+ 
+  { id: "14", country: "France", artist: "Monroe", song: "Regarde !", flag: "🇫🇷", youtubeUrl: "https://www.youtube.com/results?search_query=Monroe+Regarde+Eurovision+2026", photoUrl: "/Eurovision/artists/monroe.jpeg" },
+ 
   { id: "15", country: "Allemagne", artist: "Sarah Engels", song: "Fire", flag: "🇩🇪", youtubeUrl: "https://www.youtube.com/results?search_query=Sarah+Engels+Fire+Eurovision+2026", photoUrl: "https://source.unsplash.com/featured/?singer,SarahEngels" },
   { id: "16", country: "Grèce", artist: "Akylas", song: "Ferto", flag: "🇬🇷", youtubeUrl: "https://www.youtube.com/results?search_query=Akylas+Ferto+Eurovision+2026", photoUrl: "https://source.unsplash.com/featured/?singer,Akylas" },
   { id: "17", country: "Israël", artist: "Noam Bettan", song: "Michelle", flag: "🇮🇱", youtubeUrl: "https://www.youtube.com/results?search_query=Noam+Bettan+Michelle+Eurovision+2026", photoUrl: "https://source.unsplash.com/featured/?singer,NoamBettan" },

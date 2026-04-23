@@ -8,6 +8,7 @@ import LoginPage from "./pages/LoginPage";
 import VotePage from "./pages/VotePage";
 import ResultsPage from "./pages/ResultsPage";
 import NotFound from "./pages/NotFound";
+import Register from "./pages/CreateAcountPage";
 
 const queryClient = new QueryClient();
 
@@ -21,6 +22,7 @@ const App = () => (
             <Route path="/" element={<LoginPage />} />
             <Route path="/vote" element={<VotePage />} />
             <Route path="/results" element={<ResultsPage />} />
+            <Route path="/register" element={<Register />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
       </AppProvider>
