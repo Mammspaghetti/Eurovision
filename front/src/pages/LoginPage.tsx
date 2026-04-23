@@ -42,7 +42,9 @@ const LoginPage = () => {
             className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/10 border border-primary/30 mb-4"
           >
             <Music className="w-4 h-4 text-primary" />
-            <span className="text-sm font-medium text-primary">Eurovision 2025 — Basel 🇨🇭</span>
+            <span className="text-sm font-medium text-primary">
+               Eurovision 2026 — Wien 🇦🇹
+            </span>
           </motion.div>
           <h1 className="font-display text-5xl font-bold text-glow mb-3">
             Soirée Eurovision 🎤
@@ -51,7 +53,15 @@ const LoginPage = () => {
             Fais tes pronostics et gagne des goodies !
           </p>
         </div>
-
+        {/* Kermit présentateur */}
+        <motion.img
+          src="/kermit.png" // mets ton image dans /public
+          alt="Kermit presenter"
+          initial={{ opacity: 0, y: -40 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4, duration: 0.6 }}
+          className="w-32 mx-auto mb-4 drop-shadow-xl"
+        />
         {/* Login form */}
         <motion.form
           onSubmit={handleSubmit}
