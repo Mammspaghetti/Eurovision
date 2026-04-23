@@ -38,17 +38,30 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         body: JSON.stringify({ pseudo, password }),
       });
 
-      if (!res.ok) return false;
+      if (!res.ok) throw new Error("API failed");
 
       const data = await res.json();
-      console.log("Response data:", data);
-      // stocker pseudo + token
+      console.log("✅ Backend login OK:", data);
+
       setUser({ pseudo: data.pseudo, token: data.token });
       localStorage.setItem("token", data.token);
       localStorage.setItem("pseudo", data.pseudo);
+
       return true;
     } catch (err) {
-      console.error("Login failed:", err);
+      console.warn("⚠️ Backend KO → fallback mock");
+
+      // ===== MOCK LOGIN =====
+      if (pseudo === "test" && password === "test") {
+        const fakeToken = "mock-token-123";
+
+        setUser({ pseudo: "test", token: fakeToken });
+        localStorage.setItem("token", fakeToken);
+        localStorage.setItem("pseudo", "test");
+
+        return true;
+      }
+
       return false;
     }
   };
