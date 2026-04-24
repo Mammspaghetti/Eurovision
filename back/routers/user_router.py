@@ -38,15 +38,18 @@ def login(user: UserLogin, db: Session = Depends(get_db)):
     print("Received from front:", user)  # <-- ajoute ça
 
     db_user = db.query(UserDB).filter(UserDB.pseudo == user.pseudo).first()
+
     if not db_user or not verify_password(user.password, db_user.password):
         raise HTTPException(status_code=401, detail="Invalid credentials")
     
     token = create_token()
+
     return {
         "data": user,
-        "token": token, 
+        "id": db_user.id,   # ✅ IMPORTANT
         "pseudo": db_user.pseudo, 
         "email": db_user.email
+        "token": token, 
     }
 
 # Liste des users

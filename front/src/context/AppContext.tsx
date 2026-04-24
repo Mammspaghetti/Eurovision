@@ -3,6 +3,7 @@ import { createContext, useContext, useState, ReactNode, useEffect } from "react
 import { Artist } from "@/data/artists";
 
 interface User {
+  id: number;
   pseudo: string;
   token?: string;
 }
@@ -43,7 +44,11 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       const data = await res.json();
       console.log("✅ Backend login OK:", data);
 
-      setUser({ pseudo: data.pseudo, token: data.token });
+      setUser({
+        id: data.id,
+        pseudo: data.pseudo,
+        token: data.token,
+      });
       localStorage.setItem("token", data.token);
       localStorage.setItem("pseudo", data.pseudo);
 
@@ -55,7 +60,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       if (pseudo === "test" && password === "test") {
         const fakeToken = "mock-token-123";
 
-        setUser({ pseudo: "test", token: fakeToken });
+        setUser({ id:0, pseudo: "test", token: fakeToken });
         localStorage.setItem("token", fakeToken);
         localStorage.setItem("pseudo", "test");
 
@@ -94,7 +99,15 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     const token = localStorage.getItem("token");
     const pseudo = localStorage.getItem("pseudo");
-    if (token && pseudo) setUser({ pseudo, token });
+    const id = localStorage.getItem("id");
+
+    if (token && pseudo && id) {
+      setUser({
+        id: Number(id),
+        pseudo,
+        token,
+      });
+    }
   }, []);
 
   // ======== SUBMIT RANKING =========

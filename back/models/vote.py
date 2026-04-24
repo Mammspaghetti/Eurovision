@@ -1,11 +1,11 @@
-from sqlalchemy import Column, Integer, ForeignKey, JSON
+from sqlalchemy import Column, Integer, ForeignKey, DateTime, Text
+from sqlalchemy.sql import func
 from database.db import Base
 
-class VoteDB(Base):
+class Vote(Base):
     __tablename__ = "votes"
 
-    id = Column(Integer, primary_key=True, index=True)
-
-    user_id = Column(Integer, ForeignKey("users.id"), unique=True)
-
-    ranking = Column(JSON, nullable=False)
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey("users.id"))
+    ranking = Column(Text)  # JSON string
+    created_at = Column(DateTime, server_default=func.now())

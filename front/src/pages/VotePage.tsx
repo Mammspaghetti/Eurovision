@@ -71,11 +71,21 @@ const VotePage = () => {
     });
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!isVoteOpen) return;
 
+    await fetch("https://ton-backend.onrender.com/votes/", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        user_id: user.id,
+        ranking: items,
+      }),
+    });
+
     submitRanking(items);
-    localStorage.setItem("vote_draft", JSON.stringify(items));
     navigate("/results");
   };
 
