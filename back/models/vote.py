@@ -9,3 +9,4 @@ class Vote(Base):
     user_id = Column(Integer, ForeignKey("users.id"))
     ranking = Column(Text)  # JSON string
     created_at = Column(DateTime, server_default=func.now())
+    status = Column(String, default="draft")  # 👈 ajout

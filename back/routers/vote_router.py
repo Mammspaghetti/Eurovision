@@ -8,7 +8,6 @@ import json
 
 router = APIRouter(prefix="/votes", tags=["Votes"])
 
-# dependency DB
 def get_db():
     db = SessionLocal()
     try:
@@ -17,21 +16,29 @@ def get_db():
         db.close()
 
 
-# 📦 schema reçu depuis React
 class VoteCreate(BaseModel):
     user_id: int
-    ranking: List[Dict]  # ou List[dict] selon ton Artist type
+    ranking: List[Dict]
 
 
-@router.post("/")
-def submit_vote(payload: VoteCreate, db: Session = Depends(get_db)):
+@router.post("/draft")
+def save_draft(payload: VoteCreate, db: Session = Depends(get_db)):
+    existing = db.query(Vote).filter(Vote.user_id == payload.user_id).first()
+
+    if existing:
+        existing.ranking = json.dumps(payload.ranking)
+        existing.status = "draft"
+        db.commit()
+        return {"message": "draft updated"}
+
     vote = Vote(
         user_id=payload.user_id,
-        ranking=json.dumps(payload.ranking)
+        ranking=json.dumps(payload.ranking),
+        status="draft"
     )
 
     db.add(vote)
     db.commit()
     db.refresh(vote)
 
-    return {"message": "vote saved", "id": vote.id}
+    return {"message": "draft saved", "id": vote.id}

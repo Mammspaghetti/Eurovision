@@ -81,7 +81,10 @@ const VotePage = () => {
       },
       body: JSON.stringify({
         user_id: user.id,
-        ranking: items,
+        ranking: items.map((a, index) => ({
+          artist_id: a.id,
+          position: index + 1
+        })),
       }),
     });
 
@@ -97,6 +100,24 @@ const VotePage = () => {
     localStorage.setItem("user_ranking", JSON.stringify(items));
 
     navigate("/results");
+  };
+
+  const saveDraft = async () => {
+    await fetch("https://ton-backend.onrender.com/votes/draft", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        user_id: user.id,
+        ranking: items.map((a, index) => ({
+          artist_id: a.id,
+          position: index + 1
+        })),
+      }),
+    });
+
+    alert("💾 Brouillon sauvegardé !");
   };
 
   if (!user) return null;
@@ -201,9 +222,7 @@ const VotePage = () => {
           </NeonButton>
 
           <NeonButton
-            onClick={() =>
-              localStorage.setItem("vote_draft", JSON.stringify(items))
-            }
+            onClick={saveDraft}
             className="w-full py-3 border border-pink-500/40 text-pink-400 bg-transparent hover:bg-pink-500 hover:text-white transition-all"
           >
             💾 Sauvegarder brouillon
