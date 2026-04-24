@@ -31,3 +31,7 @@ app.include_router(user_router)
 @app.get("/")
 def root():
     return {"message": "Backend is running"}
+
+@app.on_event("startup")
+def startup():
+    print("DB ready")

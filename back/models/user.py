@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String
+from sqlalchemy import Column, Integer, String, Boolean
 from database.db import Base
 from pydantic import BaseModel, EmailStr
 
@@ -6,10 +6,11 @@ from pydantic import BaseModel, EmailStr
 class UserDB(Base):
     __tablename__ = "users"
 
-    id = Column(Integer, primary_key=True, index=True)
-    pseudo = Column(String, unique=True, index=True)
-    email = Column(String, unique=True, index=True)
+    id = Column(Integer, primary_key=True)
+    pseudo = Column(String, unique=True)
+    email = Column(String, unique=True)
     password = Column(String)
+    voted = Column(Boolean, default=False)
 
 # Pour register
 class UserCreate(BaseModel):

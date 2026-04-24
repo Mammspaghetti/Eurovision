@@ -54,3 +54,22 @@ def login(user: UserLogin, db: Session = Depends(get_db)):
 def list_users(db: Session = Depends(get_db)):
     users = db.query(UserDB).all()
     return [{"id": u.id, "pseudo": u.pseudo, "email": u.email} for u in users]
+
+@user_router.get("/debug/db")
+def debug(db: Session = Depends(get_db)):
+    users = db.query(UserDB).all()
+    return {
+        "count": len(users),
+        "users": users
+    }
+
+@user_router.get("/debug/sql")
+def debug_sql(db: Session = Depends(get_db)):
+    from sqlalchemy import text
+
+    result = db.execute(text("SELECT * FROM users")).fetchall()
+
+    return {
+        "count": len(result),
+        "rows": [dict(r._mapping) for r in result]
+    }
