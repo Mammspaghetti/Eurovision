@@ -48,7 +48,7 @@ def login(user: UserLogin, db: Session = Depends(get_db)):
         "data": user,
         "id": db_user.id,   # ✅ IMPORTANT
         "pseudo": db_user.pseudo, 
-        "email": db_user.email
+        "email": db_user.email,
         "token": token, 
     }
 
