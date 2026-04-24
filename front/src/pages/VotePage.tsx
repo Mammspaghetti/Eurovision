@@ -216,10 +216,15 @@ const VotePage = () => {
 export default VotePage;
 
 /* helper */
-const formatTime = (s: number) => {
-  const h = Math.floor(s / 3600);
+const formatTime = (s) => {
+  const days = Math.floor(s / 86400);
+  const h = Math.floor((s % 86400) / 3600);
   const m = Math.floor((s % 3600) / 60);
   const sec = s % 60;
+
+  if (days > 0) {
+    return `${days}j ${h.toString().padStart(2, "0")}h`;
+  }
 
   return `${h.toString().padStart(2, "0")}:${m
     .toString()
