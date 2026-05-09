@@ -25,6 +25,22 @@ class VoteCreate(BaseModel):
 # =========================
 # GET VOTE
 # =========================
+@router.get("/")
+@router.get("/")
+def get_votes(db: Session = Depends(get_db)):
+
+    votes = db.query(VoteDB).all()
+
+    return [
+        {
+            "id": v.id,
+            "user_id": v.user_id,
+            "ranking": json.loads(v.ranking) if v.ranking else [],
+            "status": v.status
+        }
+        for v in votes
+    ]
+
 @router.get("/{user_id}")
 def get_vote(user_id: int, db: Session = Depends(get_db)):
 
