@@ -2,7 +2,7 @@ from sqlalchemy import Column, Integer, ForeignKey, DateTime, Text, String
 from sqlalchemy.sql import func
 from database.db import Base
 
-class Vote(Base):
+class VoteDB(Base):
     __tablename__ = "votes"
 
     id = Column(Integer, primary_key=True)
