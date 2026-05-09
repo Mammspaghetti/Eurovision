@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from database.db import SessionLocal
-from models.vote import Vote
+from models.vote import VoteDB
 from pydantic import BaseModel
 from typing import List, Dict
 import json
