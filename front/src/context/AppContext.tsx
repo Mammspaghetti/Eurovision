@@ -1,5 +1,11 @@
 // AppContext.tsx
-import { createContext, useContext, useState, ReactNode, useEffect } from "react";
+import {
+  createContext,
+  useContext,
+  useState,
+  ReactNode,
+  useEffect,
+} from "react";
 import { Artist } from "@/data/artists";
 
 interface User {
@@ -13,12 +19,16 @@ interface AppContextType {
   login: (pseudo: string, password: string) => Promise<boolean>;
   register: (pseudo: string, email: string, password: string) => Promise<boolean>;
   logout: () => void;
+
   ranking: Artist[] | null;
   submitRanking: (ranked: Artist[]) => void;
+
   hasVoted: boolean;
+  refreshVoteStatus: () => Promise<void>;
 }
 
 const AppContext = createContext<AppContextType | null>(null);
+
 export const useApp = () => {
   const ctx = useContext(AppContext);
   if (!ctx) throw new Error("useApp must be within AppProvider");
@@ -30,39 +40,57 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [ranking, setRanking] = useState<Artist[] | null>(null);
   const [hasVoted, setHasVoted] = useState(false);
 
-  // ======== LOGIN =========
+  // =========================
+  // LOGIN
+  // =========================
   const login = async (pseudo: string, password: string) => {
     try {
-      const res = await fetch("https://eurovision-back.onrender.com/users/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ pseudo, password }),
-      });
+      const res = await fetch(
+        "https://eurovision-back.onrender.com/users/login",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ pseudo, password }),
+        }
+      );
 
       if (!res.ok) throw new Error("API failed");
 
       const data = await res.json();
-      console.log("✅ Backend login OK:", data);
 
-      setUser({
+      const userData: User = {
         id: data.id,
         pseudo: data.pseudo,
         token: data.token,
-      });
+      };
+
+      setUser(userData);
+
+      // ✅ PERSISTANCE CLEAN
       localStorage.setItem("token", data.token);
       localStorage.setItem("pseudo", data.pseudo);
+      localStorage.setItem("id", String(data.id));
+
+      await refreshVoteStatus();
 
       return true;
     } catch (err) {
       console.warn("⚠️ Backend KO → fallback mock");
 
-      // ===== MOCK LOGIN =====
       if (pseudo === "test" && password === "test") {
-        const fakeToken = "mock-token-123";
+        const fakeUser: User = {
+          id: 0,
+          pseudo: "test",
+          token: "mock-token-123",
+        };
 
-        setUser({ id:0, pseudo: "test", token: fakeToken });
-        localStorage.setItem("token", fakeToken);
-        localStorage.setItem("pseudo", "test");
+        setUser(fakeUser);
+
+        localStorage.setItem("token", fakeUser.token!);
+        localStorage.setItem("pseudo", fakeUser.pseudo);
+        localStorage.setItem("id", "0");
+
+        setHasVoted(false);
 
         return true;
       }
@@ -71,14 +99,24 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  // ======== REGISTER =========
-  const register = async (pseudo: string, email: string, password: string) => {
+  // =========================
+  // REGISTER
+  // =========================
+  const register = async (
+    pseudo: string,
+    email: string,
+    password: string
+  ) => {
     try {
-      const res = await fetch("https://eurovision-back.onrender.com/users/register", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ pseudo, email, password }),
-      });
+      const res = await fetch(
+        "https://eurovision-back.onrender.com/users/register",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ pseudo, email, password }),
+        }
+      );
+
       return res.ok;
     } catch (err) {
       console.error("Register failed:", err);
@@ -86,16 +124,22 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  // ======== LOGOUT =========
+  // =========================
+  // LOGOUT
+  // =========================
   const logout = () => {
     setUser(null);
     setRanking(null);
     setHasVoted(false);
+
     localStorage.removeItem("token");
     localStorage.removeItem("pseudo");
+    localStorage.removeItem("id");
   };
 
-  // ======== PERSISTANCE AU RELOAD =========
+  // =========================
+  // RESTORE SESSION (REFRESH FIX)
+  // =========================
   useEffect(() => {
     const token = localStorage.getItem("token");
     const pseudo = localStorage.getItem("pseudo");
@@ -110,7 +154,39 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     }
   }, []);
 
-  // ======== SUBMIT RANKING =========
+  // =========================
+  // REFRESH VOTE STATUS (IMPORTANT FIX)
+  // =========================
+  const refreshVoteStatus = async () => {
+    const id = localStorage.getItem("id");
+    if (!id) return;
+
+    try {
+      const res = await fetch(
+        `https://eurovision-back.onrender.com/votes/${id}`
+      );
+
+      const data = await res.json();
+
+      if (data?.error) {
+        setHasVoted(false);
+        return;
+      }
+
+      setHasVoted(data.status === "submitted");
+
+      if (data.ranking) {
+        setRanking(data.ranking);
+      }
+    } catch (e) {
+      console.warn("Vote status refresh failed:", e);
+      setHasVoted(false);
+    }
+  };
+
+  // =========================
+  // SUBMIT RANKING
+  // =========================
   const submitRanking = (ranked: Artist[]) => {
     setRanking(ranked);
     setHasVoted(true);
@@ -118,7 +194,16 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
   return (
     <AppContext.Provider
-      value={{ user, login, register, logout, ranking, submitRanking, hasVoted }}
+      value={{
+        user,
+        login,
+        register,
+        logout,
+        ranking,
+        submitRanking,
+        hasVoted,
+        refreshVoteStatus,
+      }}
     >
       {children}
     </AppContext.Provider>
