@@ -8,6 +8,7 @@ import json
 
 router = APIRouter(prefix="/votes", tags=["Votes"])
 
+
 def get_db():
     db = SessionLocal()
     try:
@@ -20,28 +21,46 @@ class VoteCreate(BaseModel):
     user_id: int
     ranking: List[Dict]
 
+
+# =========================
+# GET VOTE
+# =========================
 @router.get("/{user_id}")
 def get_vote(user_id: int, db: Session = Depends(get_db)):
 
-    vote = db.query(Vote).filter(
-        Vote.user_id == user_id
+    vote = db.query(VoteDB).filter(
+        VoteDB.user_id == user_id
     ).first()
 
     if not vote:
         return {
-            "error": "vote not found"
+            "user_id": user_id,
+            "status": "none",
+            "ranking": []
         }
+
+    try:
+        ranking = json.loads(vote.ranking) if vote.ranking else []
+    except:
+        ranking = []
 
     return {
         "id": vote.id,
         "user_id": vote.user_id,
-        "ranking": json.loads(vote.ranking),
+        "ranking": ranking,
         "status": vote.status
     }
 
+
+# =========================
+# SAVE DRAFT
+# =========================
 @router.post("/draft")
 def save_draft(payload: VoteCreate, db: Session = Depends(get_db)):
-    existing = db.query(Vote).filter(Vote.user_id == payload.user_id).first()
+
+    existing = db.query(VoteDB).filter(
+        VoteDB.user_id == payload.user_id
+    ).first()
 
     if existing:
         existing.ranking = json.dumps(payload.ranking)
