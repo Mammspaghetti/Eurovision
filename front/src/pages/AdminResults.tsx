@@ -7,15 +7,19 @@ import HeaderAdmin from "@/components/admin/HeaderAdmin";
 import ResultAdmin from "@/components/admin/ResultAdmin";
 import StatsAdmin from "@/components/admin/StatsAdmin";
 
+type VoteStatus = "submitted" | "draft" | "none";
+
 export default function AdminResults() {
   const navigate = useNavigate();
 
   const [published, setPublished] = useState(false);
-  const [users, setUsers] = useState([]);
-  const [votes, setVotes] = useState([]);
+  const [users, setUsers] = useState<any[]>([]);
+  const [votes, setVotes] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // 📡 fetch backend
+  // =========================
+  // FETCH
+  // =========================
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -23,14 +27,13 @@ export default function AdminResults() {
           fetch("https://eurovision-back.onrender.com/users/"),
           fetch("https://eurovision-back.onrender.com/votes/")
         ]);
+
         const usersData = await usersRes.json();
         const votesData = await votesRes.json();
 
-        console.log("USERS RAW:", usersData);
-        console.log("VOTES RAW:", votesData);
-
         setUsers(usersData);
         setVotes(votesData);
+
       } catch (err) {
         console.error("Admin fetch error:", err);
       } finally {
@@ -41,14 +44,67 @@ export default function AdminResults() {
     fetchData();
   }, []);
 
-  const publishResults = (items) => {
+  // =========================
+  // STATUS USERS
+  // =========================
+  const usersWithStatus = users.map((u) => {
+    const vote = votes.find((v) => v.user_id === u.id);
+
+    let status: VoteStatus = "none";
+
+    if (!vote) {
+      status = "none";
+    } else if (vote.status === "submitted") {
+      status = "submitted";
+    } else if (vote.status === "draft") {
+      status = "draft";
+    }
+
+    return {
+      ...u,
+      voteStatus: status
+    };
+  });
+
+  // =========================
+  // LABEL UI
+  // =========================
+  const getStatusUI = (status: VoteStatus) => {
+    switch (status) {
+      case "submitted":
+        return {
+          label: "✅ Validé (1)",
+          color: "text-green-400"
+        };
+
+      case "draft":
+        return {
+          label: "🟡 Brouillon (2)",
+          color: "text-yellow-400"
+        };
+
+      default:
+        return {
+          label: "⏳ Pas encore voté (3)",
+          color: "text-red-400"
+        };
+    }
+  };
+
+  // =========================
+  // PUBLISH
+  // =========================
+  const publishResults = (items: any) => {
     localStorage.setItem("final_results", JSON.stringify(items));
     localStorage.setItem("results_published", "true");
     setPublished(true);
   };
 
-  const isAfterVote = true; // POC timing (tu brancheras ton HeaderAdmin après)
+  const isAfterVote = true;
 
+  // =========================
+  // LOADING
+  // =========================
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -62,28 +118,28 @@ export default function AdminResults() {
 
       <div className="flex gap-6 flex-col md:flex-row">
 
-        {/* 🟦 LEFT PANEL */}
+        {/* LEFT */}
         <div className="w-full md:w-1/3 space-y-4">
 
-          {/* HEADER (timer + status vote) */}
           <HeaderAdmin published={published} />
 
-          {/* STATS (users + votes) */}
-          <StatsAdmin users={users} votes={votes} />
+          {/* 👉 maintenant tu peux afficher les stats enrichies */}
+          <StatsAdmin
+            users={usersWithStatus}
+            votes={votes}
+          />
 
         </div>
 
-        {/* 🟩 RIGHT PANEL */}
+        {/* RIGHT */}
         <div className="w-full md:w-2/3">
 
-          {/* CLASSEMENT FINAL (drag & drop + validation) */}
           <ResultAdmin
             defaultArtists={defaultArtists}
             isAfterVote={isAfterVote}
             onPublish={publishResults}
           />
 
-          {/* ACTION après publish */}
           {published && (
             <button
               onClick={() => navigate("/results")}

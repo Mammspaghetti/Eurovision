@@ -49,7 +49,7 @@ def save_draft(payload: VoteCreate, db: Session = Depends(get_db)):
         db.commit()
         return {"message": "draft updated"}
 
-    vote = Vote(
+    vote = VoteDB(
         user_id=payload.user_id,
         ranking=json.dumps(payload.ranking),
         status="draft"
