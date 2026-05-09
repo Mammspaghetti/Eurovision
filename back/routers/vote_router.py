@@ -20,6 +20,24 @@ class VoteCreate(BaseModel):
     user_id: int
     ranking: List[Dict]
 
+@router.get("/{user_id}")
+def get_vote(user_id: int, db: Session = Depends(get_db)):
+
+    vote = db.query(Vote).filter(
+        Vote.user_id == user_id
+    ).first()
+
+    if not vote:
+        return {
+            "error": "vote not found"
+        }
+
+    return {
+        "id": vote.id,
+        "user_id": vote.user_id,
+        "ranking": json.loads(vote.ranking),
+        "status": vote.status
+    }
 
 @router.post("/draft")
 def save_draft(payload: VoteCreate, db: Session = Depends(get_db)):

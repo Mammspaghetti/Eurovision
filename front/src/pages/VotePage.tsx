@@ -74,7 +74,7 @@ const VotePage = () => {
   const handleSubmit = async () => {
     if (!isVoteOpen) return;
 
-    await fetch("https://ton-backend.onrender.com/votes/", {
+    await fetch("https://eurovision-back.onrender.com/votes/", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -103,7 +103,7 @@ const VotePage = () => {
   };
 
   const saveDraft = async () => {
-    await fetch("https://ton-backend.onrender.com/votes/draft", {
+    await fetch("https://eurovision-back.onrender.com/votes/draft", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
