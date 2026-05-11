@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useApp } from "@/context/AppContext";
 import NeonButton from "@/components/NeonButton";
@@ -82,6 +82,12 @@ const LoginPage = () => {
                 placeholder="Mot de passe"
                 maxLength={50}
               />
+              <Link
+                to="/mot-de-passe-oublie"
+                className="text-xs text-primary hover:underline transition-colors"
+              >
+                Mot de passe oublié ?
+              </Link>
             </div>
             {error && (
               <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-accent text-sm">
@@ -91,7 +97,9 @@ const LoginPage = () => {
             <NeonButton type="submit" className="w-full">Se connecter</NeonButton>
           </div>
         </motion.form>
+  
 
+  
         {/* Créer un compte */}
         <div className="flex justify-center mb-6">
           <button
