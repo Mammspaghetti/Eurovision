@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useApp } from "@/context/AppContext";
 import NeonButton from "@/components/NeonButton";
@@ -92,6 +92,12 @@ const LoginPage = () => {
                 placeholder="Mot de passe"
                 maxLength={50}
               />
+              <Link
+                to="/mot-de-passe-oublie"
+                className="text-xs text-primary hover:underline transition-colors"
+              >
+                Mot de passe oublié ?
+              </Link>
             </div>
 
             {/* Error */}
@@ -115,16 +121,11 @@ const LoginPage = () => {
 
           </div>
         </motion.form>
+  
 
-        {/* Divider */}
-        <div className="flex items-center gap-4 mb-6">
-          <div className="flex-1 h-px bg-border/50"></div>
-          <span className="text-xs text-muted-foreground">ou</span>
-          <div className="flex-1 h-px bg-border/50"></div>
-        </div>
-
-        {/* Register button */}
-        <div className="flex justify-center">
+  
+        {/* Créer un compte */}
+        <div className="flex justify-center mb-6">
           <button
             className="px-6 py-2.5 rounded-xl border border-pink-500/40 text-pink-400 font-semibold backdrop-blur-sm hover:bg-pink-500 hover:text-white hover:shadow-lg hover:shadow-pink-500/30 transition-all duration-200"
             onClick={() => navigate("/register")}
