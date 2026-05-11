@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.orm import Session
-from models.user import UserCreate, UserDB, UserLogin
+from models.user import UserCreate, UserDB, UserLogin, ResetPasswordRequest
 from core.security import hash_password, verify_password, create_token
 from database.db import SessionLocal
 
@@ -57,3 +57,29 @@ def login(user: UserLogin, db: Session = Depends(get_db)):
 def list_users(db: Session = Depends(get_db)):
     users = db.query(UserDB).all()
     return [{"id": u.id, "pseudo": u.pseudo, "email": u.email} for u in users]
+
+@user_router.post("/reset-password")
+def reset_password(
+    payload: ResetPasswordRequest,
+    db: Session = Depends(get_db)
+):
+    user = db.query(UserDB).filter(
+        UserDB.pseudo == payload.pseudo,
+        UserDB.email == payload.email
+    ).first()
+
+    if not user:
+        raise HTTPException(
+            status_code=404,
+            detail="User not found"
+        )
+
+    user.password = hash_password(
+        payload.new_password
+    )
+
+    db.commit()
+
+    return {
+        "message": "Password updated"
+    }

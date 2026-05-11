@@ -5,12 +5,11 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AppProvider } from "@/context/AppContext";
 
-import ResetPasswordLinkPage from "./pages/ResetPassword/ResetPasswordLinkPage";
+import ResetPasswordPage from "./pages/ResetPassword/ResetPasswordPage";
 import LoginPage from "./pages/LoginPage";
 import VotePage from "./pages/VotePage";
 import NotFound from "./pages/NotFound";
 import ResultsPage from "./pages/ResultsPage";
-import Register from "./pages/CreateAcountPage";
 
 const queryClient = new QueryClient();
 
@@ -24,7 +23,7 @@ const App = () => (
             <Route path="/" element={<LoginPage />} />
             <Route path="/vote" element={<VotePage />} />
             <Route path="/results" element={<ResultsPage />} />
-            <Route path="/mot-de-passe-oublie" element={<ResetPasswordLinkPage />} />
+            <Route path="/mot-de-passe-oublie" element={<ResetPasswordPage />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
       </AppProvider>
