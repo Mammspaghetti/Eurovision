@@ -19,17 +19,20 @@ def get_db():
 def calculate_score(ranking, real_results):
     score = 0
 
-    for user_idx, artist in enumerate(ranking):
+    for item in ranking:
+
+        artist_id = str(item["artist_id"])
+        user_pos = item["position"] - 1  # position commence à 1
 
         real_idx = next(
-            (i for i, a in enumerate(real_results) if a["id"] == artist["id"]),
+            (i for i, a in enumerate(real_results) if str(a["id"]) == artist_id),
             -1
         )
 
         if real_idx == -1:
             continue
 
-        diff = abs(real_idx - user_idx)
+        diff = abs(real_idx - user_pos)
 
         points = max(0, 100 - diff * 5)
 
@@ -179,6 +182,22 @@ def simulate_leaderboard(payload: dict, db: Session = Depends(get_db)):
             u["status"] = "TOP_10"
         else:
             u["status"] = "LOSER"
+
+    # =========================
+    # 💾 SAVE IN DATABASE
+    # =========================
+
+    existing = db.query(LeaderboardDB).first()
+
+    if existing:
+        existing.data = json.dumps(leaderboard)
+    else:
+        existing = LeaderboardDB(
+            data=json.dumps(leaderboard)
+        )
+        db.add(existing)
+
+    db.commit()
 
     return leaderboard
 
