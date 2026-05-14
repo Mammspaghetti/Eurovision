@@ -140,6 +140,48 @@ def rebuild_leaderboard(db: Session = Depends(get_db)):
 
     return leaderboard
 
+@leaderboard_router.post("/simulate")
+def simulate_leaderboard(payload: dict, db: Session = Depends(get_db)):
+
+    real_results = payload["results"]
+
+    votes = db.query(VoteDB).all()
+    users = db.query(UserDB).all()
+
+    user_map = {u.id: u for u in users}
+
+    leaderboard = []
+
+    for v in votes:
+
+        ranking = json.loads(v.ranking or "[]")
+
+        score = calculate_score(ranking, real_results)
+
+        user = user_map.get(v.user_id)
+        if not user:
+            continue
+
+        leaderboard.append({
+            "user_id": user.id,
+            "pseudo": user.pseudo,
+            "score": score
+        })
+
+    leaderboard.sort(key=lambda x: x["score"], reverse=True)
+
+    for i, u in enumerate(leaderboard):
+        u["rank"] = i + 1
+
+        if i == 0:
+            u["status"] = "WINNER"
+        elif i < len(leaderboard) * 0.1:
+            u["status"] = "TOP_10"
+        else:
+            u["status"] = "LOSER"
+
+    return leaderboard
+
 @leaderboard_router.get("/me/{user_id}")
 def get_my_score(user_id: int, db: Session = Depends(get_db)):
 

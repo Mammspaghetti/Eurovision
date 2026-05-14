@@ -79,15 +79,6 @@ export default function VoteAdmin({
     try {
       setLoading(true);
 
-      await fetch("https://eurovision-back.onrender.com/votes/publish", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          results: items,
-          published: false,
-        }),
-      });
-
       const res = await fetch(
         "https://eurovision-back.onrender.com/leaderboard/simulate",
         {
@@ -101,10 +92,14 @@ export default function VoteAdmin({
 
       const data = await res.json();
 
-      console.log("SIMULATION:", data);
+      console.log("🧪 SIMULATION RESULT:", data);
+
+      // tu peux stocker localement si tu veux
+      localStorage.setItem("simulation_leaderboard", JSON.stringify(data));
 
       alert("🧪 Simulation OK");
     } catch (e) {
+      console.error(e);
       alert("❌ erreur simulation");
     } finally {
       setLoading(false);
