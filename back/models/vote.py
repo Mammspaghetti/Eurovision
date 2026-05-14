@@ -11,10 +11,3 @@ class VoteDB(Base):
     created_at = Column(DateTime, server_default=func.now())
     status = Column(String, default="draft")  # 👈 ajout
 
-class FinalResultDB(Base):
-    __tablename__ = "final_results"
-
-    id = Column(Integer, primary_key=True)
-    published = Column(Boolean, default=False)
-    results = Column(Text)  # JSON string
-    created_at = Column(DateTime, server_default=func.now())

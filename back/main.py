@@ -3,6 +3,8 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from routers.user_router import user_router
 from routers.vote_router import router as vote_router
+from routers.leaderboard_router import leaderboard_router
+
 from database.db import Base, engine
 
 Base.metadata.create_all(bind=engine)
@@ -29,6 +31,7 @@ app.add_middleware(
 # ======= Routers =======
 app.include_router(user_router)
 app.include_router(vote_router)
+app.include_router(leaderboard_router)
 
 @app.get("/")
 def root():
