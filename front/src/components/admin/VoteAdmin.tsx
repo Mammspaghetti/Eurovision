@@ -23,14 +23,13 @@ export default function VoteAdmin({
   isAfterVote,
 }) {
   const [items, setItems] = useState(defaultArtists);
+  const [loading, setLoading] = useState(false);
 
-  // 🧲 sensors (copié VotePage)
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
     useSensor(TouchSensor, { activationConstraint: { delay: 150, tolerance: 5 } })
   );
 
-  // 🔀 drag & drop
   const handleDragEnd = (event) => {
     const { active, over } = event;
     if (!over || active.id === over.id) return;
@@ -42,44 +41,68 @@ export default function VoteAdmin({
     });
   };
 
-  const publishResults = async () => {
+  // =========================
+  // OFFICIEL
+  // =========================
+  const publishOfficial = async () => {
     try {
+      setLoading(true);
 
-      const response = await fetch(
-        "https://eurovision-back.onrender.com/final-results/",
+      const res = await fetch(
+        "https://eurovision-back.onrender.com/votes/publish",
         {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             results: items,
-            published: true
-          })
+            published: true,
+          }),
         }
       );
 
-      if (!response.ok) {
-        throw new Error("Publish failed");
-      }
+      if (!res.ok) throw new Error();
 
-      alert("✅ Résultats publiés");
-
+      alert("✅ Résultats officiels publiés");
       onPublish(items);
-
     } catch (err) {
-
       console.error(err);
-
       alert("❌ Erreur publication");
+    } finally {
+      setLoading(false);
     }
   };
 
-  // 🧪 fake
-  const fakePublish = () => {
-    localStorage.setItem("final_results", JSON.stringify(items));
-    localStorage.setItem("simulation_mode", "true");
-    alert("🧪 Résultat simulé !");
+  // =========================
+  // SIMULATION (faux vote)
+  // =========================
+  const publishFake = async () => {
+    try {
+      setLoading(true);
+
+      await fetch(
+        "https://eurovision-back.onrender.com/votes/publish",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            results: items,
+            published: false, // 👈 IMPORTANT = simulation
+          }),
+        }
+      );
+
+      localStorage.setItem(
+        "final_results_simulation",
+        JSON.stringify(items)
+      );
+
+      alert("🧪 Simulation enregistrée (non officielle)");
+    } catch (err) {
+      console.error(err);
+      alert("❌ Erreur simulation");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -112,23 +135,26 @@ export default function VoteAdmin({
 
         {/* OFFICIEL */}
         <button
-          onClick={publishResults}
-          disabled={!isAfterVote}
+          onClick={publishOfficial}
+          disabled={!isAfterVote || loading}
           className={`w-full py-3 rounded-xl font-bold text-white ${
             isAfterVote ? "bg-green-500" : "bg-gray-400"
           }`}
         >
           {isAfterVote
-            ? "✅ Valider officiellement"
+            ? loading
+              ? "⏳ Publication..."
+              : "✅ Valider officiellement"
             : "⏳ Après le vote"}
         </button>
 
-        {/* TEST */}
+        {/* SIMULATION */}
         <button
-          onClick={fakePublish}
+          onClick={publishFake}
+          disabled={loading}
           className="w-full py-3 rounded-xl bg-blue-500 text-white font-bold"
         >
-          🧪 Simulation
+          🧪 Simulation (test)
         </button>
 
       </div>

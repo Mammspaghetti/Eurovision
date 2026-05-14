@@ -1,33 +1,22 @@
-import { useEffect, useState } from "react";
+export default function HeaderAdmin({
+  published,
+  isAfterVote,
+  voteEnd,
+  now,
+}) {
 
-const VOTE_DURATION = 20 * 60;
-const VOTE_START_DATE = new Date("2026-05-16T21:00:00");
-
-export default function HeaderAdmin({ published }) {
-  const [now, setNow] = useState(new Date());
-
-  useEffect(() => {
-    const i = setInterval(() => setNow(new Date()), 1000);
-    return () => clearInterval(i);
-  }, []);
-
-  const voteStart = VOTE_START_DATE.getTime();
-  const voteEnd = voteStart + VOTE_DURATION * 1000;
-  const nowMs = now.getTime();
-
-  const isAfterVote = nowMs > voteEnd;
-
-  const formatTime = (ms) => {
+  const formatTime = (ms: number) => {
     const s = Math.max(0, Math.floor(ms / 1000));
     const h = Math.floor(s / 3600);
     const m = Math.floor((s % 3600) / 60);
     const sec = s % 60;
+
     return `${h.toString().padStart(2, "0")}:${m
       .toString()
       .padStart(2, "0")}:${sec.toString().padStart(2, "0")}`;
   };
 
-  const timeLeft = isAfterVote ? 0 : voteEnd - nowMs;
+  const timeLeft = isAfterVote ? 0 : voteEnd - now.getTime();
 
   return (
     <div className="mb-6 p-4 rounded-lg border bg-card">

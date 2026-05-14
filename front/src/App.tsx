@@ -10,6 +10,7 @@ import LoginPage from "./pages/LoginPage";
 import VotePage from "./pages/VotePage";
 import NotFound from "./pages/NotFound";
 import ResultsPage from "./pages/ResultsPage";
+import AdminPage from "./pages/AdminPage";
 
 const queryClient = new QueryClient();
 
@@ -21,6 +22,7 @@ const App = () => (
         <AppProvider> {/* 👈 OBLIGATOIRE */}
           <Routes>
             <Route path="/" element={<LoginPage />} />
+            <Route path="/admin" element={<AdminPage />} />
             <Route path="/vote" element={<VotePage />} />
             <Route path="/results" element={<ResultsPage />} />
             <Route path="/mot-de-passe-oublie" element={<ResetPasswordPage />} />

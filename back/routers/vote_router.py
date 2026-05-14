@@ -24,6 +24,29 @@ class VoteCreate(BaseModel):
 # =========================
 # GET FINAL VOTE
 # =========================
+# @router.post("/publish")
+# def publish_results(payload: dict, db: Session = Depends(get_db)):
+
+#     existing = db.query(FinalResultDB).first()
+
+#     if existing:
+#         existing.results = json.dumps(payload["results"])
+#         existing.published = True
+
+#         db.commit()
+
+#         return {"message": "results updated"}
+
+#     result = FinalResultDB(
+#         results=json.dumps(payload["results"]),
+#         published=True
+#     )
+
+#     db.add(result)
+
+#     db.commit()
+
+#     return {"message": "results created"}
 @router.post("/publish")
 def publish_results(payload: dict, db: Session = Depends(get_db)):
 
@@ -31,22 +54,19 @@ def publish_results(payload: dict, db: Session = Depends(get_db)):
 
     if existing:
         existing.results = json.dumps(payload["results"])
-        existing.published = True
-
+        existing.published = payload.get("published", False)
         db.commit()
-
-        return {"message": "results updated"}
+        return {"message": "updated"}
 
     result = FinalResultDB(
         results=json.dumps(payload["results"]),
-        published=True
+        published=payload.get("published", False)
     )
 
     db.add(result)
-
     db.commit()
 
-    return {"message": "results created"}
+    return {"message": "created"}
 
 # =========================
 # GET FINAL VOTE
