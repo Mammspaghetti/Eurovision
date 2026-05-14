@@ -85,8 +85,10 @@ export default function VoteAdmin({
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            results: items,
-          }),
+            results: items.map(a => ({
+              id: a.id
+            }))
+          })
         }
       );
 
