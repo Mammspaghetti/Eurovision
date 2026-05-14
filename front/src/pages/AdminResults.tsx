@@ -4,8 +4,8 @@ import { useNavigate } from "react-router-dom";
 import { artists as defaultArtists } from "@/data/artists";
 
 import HeaderAdmin from "@/components/admin/HeaderAdmin";
-import ResultAdmin from "@/components/admin/ResultAdmin";
 import StatsAdmin from "@/components/admin/StatsAdmin";
+import VoteAdmin from "@/components/admin/VoteAdmin";
 
 type VoteStatus = "submitted" | "draft" | "none";
 
@@ -134,7 +134,7 @@ export default function AdminResults() {
         {/* RIGHT */}
         <div className="w-full md:w-2/3">
 
-          <ResultAdmin
+          <VoteAdmin
             defaultArtists={defaultArtists}
             isAfterVote={isAfterVote}
             onPublish={publishResults}

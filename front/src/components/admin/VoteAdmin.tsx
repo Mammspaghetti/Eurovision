@@ -17,7 +17,7 @@ import {
 
 import SortableArtist from "@/components/SortableArtist";
 
-export default function ResultAdmin({
+export default function VoteAdmin({
   defaultArtists,
   onPublish,
   isAfterVote,
