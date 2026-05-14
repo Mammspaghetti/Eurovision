@@ -30,6 +30,7 @@ def calculate_score(ranking, real_results):
             continue
 
         diff = abs(real_idx - user_idx)
+
         points = max(0, 100 - diff * 5)
 
         if real_idx <= 2:
@@ -91,3 +92,66 @@ def get_leaderboard(db: Session = Depends(get_db)):
             u["status"] = "LOSER"
 
     return leaderboard
+
+@leaderboard_router.post("/rebuild")
+def rebuild_leaderboard(db: Session = Depends(get_db)):
+
+    final = db.query(FinalResultDB).first()
+    if not final:
+        return {"error": "no final results"}
+
+    real_results = json.loads(final.results)
+
+    votes = db.query(VoteDB).all()
+    users = db.query(UserDB).all()
+
+    user_map = {u.id: u for u in users}
+
+    leaderboard = []
+
+    for v in votes:
+
+        ranking = json.loads(v.ranking or "[]")
+
+        score = calculate_score(ranking, real_results)
+
+        user = user_map.get(v.user_id)
+        if not user:
+            continue
+
+        leaderboard.append({
+            "user_id": user.id,
+            "pseudo": user.pseudo,
+            "score": score
+        })
+
+    leaderboard.sort(key=lambda x: x["score"], reverse=True)
+
+    # rank + status
+    for i, u in enumerate(leaderboard):
+        u["rank"] = i + 1
+
+        if i == 0:
+            u["status"] = "WINNER"
+        elif i < len(leaderboard) * 0.1:
+            u["status"] = "TOP_10"
+        else:
+            u["status"] = "LOSER"
+
+    return leaderboard
+
+@leaderboard_router.get("/me/{user_id}")
+def get_my_score(user_id: int, db: Session = Depends(get_db)):
+
+    leaderboard = rebuild_leaderboard(db)
+
+    me = next((u for u in leaderboard if u["user_id"] == user_id), None)
+
+    if not me:
+        return {
+            "score": 0,
+            "rank": None,
+            "status": "NONE"
+        }
+
+    return me

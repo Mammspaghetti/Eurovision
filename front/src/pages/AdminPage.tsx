@@ -6,6 +6,7 @@ import { artists as defaultArtists } from "@/data/artists";
 import HeaderAdmin from "@/components/admin/HeaderAdmin";
 import StatsAdmin from "@/components/admin/StatsAdmin";
 import VoteAdmin from "@/components/admin/VoteAdmin";
+import ResultAdmin from "@/components/admin/ResultAdmin";
 
 type VoteStatus = "submitted" | "draft" | "none";
 

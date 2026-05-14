@@ -79,27 +79,33 @@ export default function VoteAdmin({
     try {
       setLoading(true);
 
-      await fetch(
-        "https://eurovision-back.onrender.com/votes/publish",
+      await fetch("https://eurovision-back.onrender.com/votes/publish", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          results: items,
+          published: false,
+        }),
+      });
+
+      const res = await fetch(
+        "https://eurovision-back.onrender.com/leaderboard/simulate",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             results: items,
-            published: false, // 👈 IMPORTANT = simulation
           }),
         }
       );
 
-      localStorage.setItem(
-        "final_results_simulation",
-        JSON.stringify(items)
-      );
+      const data = await res.json();
 
-      alert("🧪 Simulation enregistrée (non officielle)");
-    } catch (err) {
-      console.error(err);
-      alert("❌ Erreur simulation");
+      console.log("SIMULATION:", data);
+
+      alert("🧪 Simulation OK");
+    } catch (e) {
+      alert("❌ erreur simulation");
     } finally {
       setLoading(false);
     }

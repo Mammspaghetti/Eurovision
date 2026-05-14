@@ -1,136 +1,68 @@
 import { useState } from "react";
 
-import {
-  DndContext,
-  closestCenter,
-  PointerSensor,
-  TouchSensor,
-  useSensor,
-  useSensors,
-} from "@dnd-kit/core";
+export default function ResultAdmin() {
+  const [loading, setLoading] = useState(false);
+  const [leaderboard, setLeaderboard] = useState<any[]>([]);
 
-import {
-  SortableContext,
-  verticalListSortingStrategy,
-  arrayMove,
-} from "@dnd-kit/sortable";
+  const calculateScores = async () => {
+    setLoading(true);
 
-import SortableArtist from "@/components/SortableArtist";
-
-export default function ResultAdmin({
-  defaultArtists,
-  onPublish,
-  isAfterVote,
-}) {
-  const [items, setItems] = useState(defaultArtists);
-
-  // 🧲 sensors (copié VotePage)
-  const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
-    useSensor(TouchSensor, { activationConstraint: { delay: 150, tolerance: 5 } })
-  );
-
-  // 🔀 drag & drop
-  const handleDragEnd = (event) => {
-    const { active, over } = event;
-    if (!over || active.id === over.id) return;
-
-    setItems((prev) => {
-      const oldIndex = prev.findIndex((i) => i.id === active.id);
-      const newIndex = prev.findIndex((i) => i.id === over.id);
-      return arrayMove(prev, oldIndex, newIndex);
-    });
-  };
-
-  const publishResults = async () => {
     try {
-
-      const response = await fetch(
-        "https://eurovision-back.onrender.com/final-results/",
+      const res = await fetch(
+        "https://eurovision-back.onrender.com/leaderboard/rebuild",
         {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({
-            results: items,
-            published: true
-          })
         }
       );
 
-      if (!response.ok) {
-        throw new Error("Publish failed");
-      }
+      const data = await res.json();
 
-      alert("✅ Résultats publiés");
-
-      onPublish(items);
-
-    } catch (err) {
-
-      console.error(err);
-
-      alert("❌ Erreur publication");
+      setLeaderboard(data);
+    } catch (e) {
+      console.error(e);
+      alert("Erreur calcul scores");
     }
-  };
 
-  // 🧪 fake
-  const fakePublish = () => {
-    localStorage.setItem("final_results", JSON.stringify(items));
-    localStorage.setItem("simulation_mode", "true");
-    alert("🧪 Résultat simulé !");
+    setLoading(false);
   };
 
   return (
-    <div>
+    <div className="p-4 space-y-4">
 
-      {/* LISTE DRAG */}
-      <DndContext
-        sensors={sensors}
-        collisionDetection={closestCenter}
-        onDragEnd={handleDragEnd}
+      {/* BUTTON */}
+      <button
+        onClick={calculateScores}
+        disabled={loading}
+        className="
+          w-full py-3 rounded-xl
+          bg-green-500 text-white font-bold
+        "
       >
-        <SortableContext
-          items={items.map((a) => a.id)}
-          strategy={verticalListSortingStrategy}
-        >
-          <div className="space-y-2 mb-6">
-            {items.map((artist, index) => (
-              <SortableArtist
-                key={artist.id}
-                artist={artist}
-                index={index}
-              />
-            ))}
+        {loading ? "Calcul..." : "🧮 Calculer les scores"}
+      </button>
+
+      {/* LEADERBOARD */}
+      <div className="space-y-2 mt-4">
+        {leaderboard.map((u) => (
+          <div
+            key={u.user_id}
+            className="
+              flex justify-between items-center
+              p-3 rounded-lg border bg-card
+            "
+          >
+            <div>
+              <p className="font-bold">{u.pseudo}</p>
+              <p className="text-xs text-muted-foreground">
+                #{u.rank} • {u.status}
+              </p>
+            </div>
+
+            <p className="text-xl font-bold text-primary">
+              {u.score}
+            </p>
           </div>
-        </SortableContext>
-      </DndContext>
-
-      {/* ACTIONS */}
-      <div className="space-y-3">
-
-        {/* OFFICIEL */}
-        <button
-          onClick={publishResults}
-          disabled={!isAfterVote}
-          className={`w-full py-3 rounded-xl font-bold text-white ${
-            isAfterVote ? "bg-green-500" : "bg-gray-400"
-          }`}
-        >
-          {isAfterVote
-            ? "✅ Valider officiellement"
-            : "⏳ Après le vote"}
-        </button>
-
-        {/* TEST */}
-        <button
-          onClick={fakePublish}
-          className="w-full py-3 rounded-xl bg-blue-500 text-white font-bold"
-        >
-          🧪 Simulation
-        </button>
-
+        ))}
       </div>
 
     </div>
