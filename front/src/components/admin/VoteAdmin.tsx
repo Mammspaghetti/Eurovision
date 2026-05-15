@@ -65,7 +65,7 @@ export default function VoteAdmin({
   // FORMAT RANKING
   // =========================
   const formattedRanking = items.map((artist, index) => ({
-    artist_id: artist.id,
+    artist_id: String(artist.id),
     position: index + 1,
   }));
 
@@ -84,7 +84,7 @@ export default function VoteAdmin({
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            user_id: 999,
+            user_id: 1,
             ranking: formattedRanking,
           }),
         }
