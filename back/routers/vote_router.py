@@ -47,26 +47,38 @@ class VoteCreate(BaseModel):
 #     db.commit()
 
 #     return {"message": "results created"}
-@router.post("/publish")
-def publish_results(payload: dict, db: Session = Depends(get_db)):
+# =========================
+# SUBMIT FINAL VOTE
+# =========================
+@router.post("/submit")
+def submit_vote(payload: VoteCreate, db: Session = Depends(get_db)):
 
-    existing = db.query(FinalResultDB).first()
+    existing = db.query(VoteDB).filter(
+        VoteDB.user_id == payload.user_id
+    ).first()
 
     if existing:
-        existing.results = json.dumps(payload["results"])
-        existing.published = payload.get("published", False)
-        db.commit()
-        return {"message": "updated"}
+        existing.ranking = json.dumps(payload.ranking)
+        existing.status = "submitted"
 
-    result = FinalResultDB(
-        results=json.dumps(payload["results"]),
-        published=payload.get("published", False)
+        db.commit()
+
+        return {"message": "vote submitted"}
+
+    vote = VoteDB(
+        user_id=payload.user_id,
+        ranking=json.dumps(payload.ranking),
+        status="submitted"
     )
 
-    db.add(result)
+    db.add(vote)
     db.commit()
+    db.refresh(vote)
 
-    return {"message": "created"}
+    return {
+        "message": "vote submitted",
+        "id": vote.id
+    }
 
 # =========================
 # GET FINAL VOTE
