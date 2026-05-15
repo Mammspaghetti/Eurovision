@@ -22,16 +22,10 @@ origins = [
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:3000",
-        "http://localhost:8080",
-        "http://127.0.0.1:3000",
-        "http://127.0.0.1:8080",
-        "https://mammspaghetti.github.io"
-    ],
-    allow_credentials=False,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_origins=origins,   # front autorisé
+    allow_credentials=True,
+    allow_methods=["*"],     # autorise GET, POST, OPTIONS...
+    allow_headers=["*"],     # autorise Content-Type, Authorization...
 )
 
 # ======= Routers =======

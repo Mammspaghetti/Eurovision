@@ -107,12 +107,11 @@ def create_or_update_vote(
 @router.post("/submit")
 def submit_vote(payload: VoteCreate, db: Session = Depends(get_db)):
 
-    ranking_json = json.dumps(payload.ranking)
-
-    # 1. SAVE VOTE
     existing = db.query(VoteDB).filter(
         VoteDB.user_id == payload.user_id
     ).first()
+
+    ranking_json = json.dumps(payload.ranking)
 
     if existing:
         existing.ranking = ranking_json
@@ -126,24 +125,7 @@ def submit_vote(payload: VoteCreate, db: Session = Depends(get_db)):
 
     db.commit()
 
-    # 2. UPSERT LEADERBOARD (juste stockage brut)
-    lb = db.query(LeaderboardDB).filter(
-        LeaderboardDB.user_id == payload.user_id
-    ).first()
-
-    if lb:
-        lb.data = ranking_json   # 👈 on stocke le ranking brut
-    else:
-        db.add(LeaderboardDB(
-            user_id=payload.user_id,
-            data=ranking_json
-        ))
-
-    db.commit()
-
-    return {
-        "message": "ok"
-    }
+    return {"message": "ok"}
 
 
 # =========================================
