@@ -5,6 +5,7 @@ from database.db import SessionLocal
 
 from models.vote import VoteDB
 from models.final_result import FinalResultDB
+from models.leaderboard import LeaderboardDB
 
 from pydantic import BaseModel
 
@@ -106,81 +107,58 @@ def create_or_update_vote(
 @router.post("/submit")
 def submit_vote(payload: VoteCreate, db: Session = Depends(get_db)):
 
-    try:
-        # 1. UPSERT vote user
-        existing = db.query(VoteDB).filter(
-            VoteDB.user_id == payload.user_id
-        ).first()
+    # 1. SAVE VOTE
+    ranking_json = json.dumps(payload.ranking)
 
-        ranking_json = json.dumps(payload.ranking or [])
+    existing = db.query(VoteDB).filter(
+        VoteDB.user_id == payload.user_id
+    ).first()
 
-        if existing:
-            existing.ranking = ranking_json
-            existing.status = "submitted"
-        else:
-            vote = VoteDB(
-                user_id=payload.user_id,
-                ranking=ranking_json,
-                status="submitted"
-            )
-            db.add(vote)
+    if existing:
+        existing.ranking = ranking_json
+        existing.status = "submitted"
+    else:
+        db.add(VoteDB(
+            user_id=payload.user_id,
+            ranking=ranking_json,
+            status="submitted"
+        ))
 
-        db.commit()
+    db.commit()
 
-        # 2. recalcul global leaderboard
-        all_votes = db.query(VoteDB).filter(
-            VoteDB.status == "submitted"
-        ).all()
+    # 2. GET FINAL RESULTS
+    final = db.query(FinalResultDB).first()
+    if not final:
+        return {"error": "no final results"}
 
-        aggregated = {}
+    real_results = json.loads(final.results)
 
-        for v in all_votes:
-            ranking = json.loads(v.ranking or "[]")
+    # 3. CALCUL SCORE
+    score = calculate_score(
+        json.loads(ranking_json),
+        real_results
+    )
 
-            for item in ranking:
-                artist_id = item["artist_id"]
-                position = item["position"]
+    # 4. UPSERT LEADERBOARD
+    lb = db.query(LeaderboardDB).filter(
+        LeaderboardDB.user_id == payload.user_id
+    ).first()
 
-                if artist_id not in aggregated:
-                    aggregated[artist_id] = 0
-
-                # score simple (inverse ranking)
-                aggregated[artist_id] += (100 - position)
-
-        # 3. transformer en liste triée
-        results = sorted(
-            aggregated.items(),
-            key=lambda x: x[1],
-            reverse=True
+    if lb:
+        lb.score = score
+    else:
+        lb = LeaderboardDB(
+            user_id=payload.user_id,
+            score=score
         )
+        db.add(lb)
 
-        final = [
-            {"artist_id": k, "score": v}
-            for k, v in results
-        ]
+    db.commit()
 
-        # 4. UPSERT FinalResultDB
-        existing_final = db.query(FinalResultDB).first()
-
-        if existing_final:
-            existing_final.results = json.dumps(final)
-            existing_final.published = True
-        else:
-            db.add(FinalResultDB(
-                results=json.dumps(final),
-                published=True
-            ))
-
-        db.commit()
-
-        return {
-            "message": "vote submitted + leaderboard updated",
-            "results": final
-        }
-
-    except Exception as e:
-        print("ERROR:", str(e))
-        raise HTTPException(status_code=500, detail=str(e))
+    return {
+        "message": "vote submitted",
+        "score": score
+    }
 
 
 # =========================================

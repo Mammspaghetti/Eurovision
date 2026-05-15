@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 from database.db import SessionLocal
 from models.vote import VoteDB
 from models.user import UserDB
+from models.leaderboard import LeaderboardDB
 from models.final_result import FinalResultDB
 import json
 
@@ -48,171 +49,23 @@ def calculate_score(ranking, real_results):
 @leaderboard_router.get("/")
 def get_leaderboard(db: Session = Depends(get_db)):
 
-    final = db.query(FinalResultDB).first()
+    rows = db.query(LeaderboardDB).all()
 
-    if not final:
-        return []
+    rows.sort(key=lambda x: x.score, reverse=True)
 
-    real_results = json.loads(final.results)
+    result = []
 
-    votes = db.query(VoteDB).all()
-    users = db.query(UserDB).all()
-
-    user_map = {u.id: u for u in users}
-
-    leaderboard = []
-
-    for v in votes:
-
-        try:
-            ranking = json.loads(v.ranking or "[]")
-        except:
-            ranking = []
-
-        score = calculate_score(ranking, real_results)
-
-        user = user_map.get(v.user_id)
-
-        if not user:
-            continue
-
-        leaderboard.append({
-            "user_id": user.id,
-            "pseudo": user.pseudo,
-            "score": score
+    for i, r in enumerate(rows):
+        result.append({
+            "user_id": r.user_id,
+            "score": r.score,
+            "rank": i + 1,
+            "status": (
+                "WINNER"
+                if i == 0
+                else "TOP_10" if i < len(rows) * 0.1
+                else "LOSER"
+            )
         })
 
-    leaderboard.sort(key=lambda x: x["score"], reverse=True)
-
-    for i, u in enumerate(leaderboard):
-        u["rank"] = i + 1
-
-        if i == 0:
-            u["status"] = "WINNER"
-        elif i < len(leaderboard) * 0.1:
-            u["status"] = "TOP 10%"
-        else:
-            u["status"] = "LOSER"
-
-    return leaderboard
-
-@leaderboard_router.post("/rebuild")
-def rebuild_leaderboard(db: Session = Depends(get_db)):
-
-    final = db.query(FinalResultDB).first()
-    if not final:
-        return {"error": "no final results"}
-
-    real_results = json.loads(final.results)
-
-    votes = db.query(VoteDB).all()
-    users = db.query(UserDB).all()
-
-    user_map = {u.id: u for u in users}
-
-    leaderboard = []
-
-    for v in votes:
-
-        ranking = json.loads(v.ranking or "[]")
-
-        score = calculate_score(ranking, real_results)
-
-        user = user_map.get(v.user_id)
-        if not user:
-            continue
-
-        leaderboard.append({
-            "user_id": user.id,
-            "pseudo": user.pseudo,
-            "score": score
-        })
-
-    leaderboard.sort(key=lambda x: x["score"], reverse=True)
-
-    # rank + status
-    for i, u in enumerate(leaderboard):
-        u["rank"] = i + 1
-
-        if i == 0:
-            u["status"] = "WINNER"
-        elif i < len(leaderboard) * 0.1:
-            u["status"] = "TOP_10"
-        else:
-            u["status"] = "LOSER"
-
-    return leaderboard
-
-@leaderboard_router.post("/simulate")
-def simulate_leaderboard(payload: dict, db: Session = Depends(get_db)):
-
-    real_results = payload["results"]
-
-    votes = db.query(VoteDB).all()
-    users = db.query(UserDB).all()
-
-    user_map = {u.id: u for u in users}
-
-    leaderboard = []
-
-    for v in votes:
-
-        ranking = json.loads(v.ranking or "[]")
-
-        score = calculate_score(ranking, real_results)
-
-        user = user_map.get(v.user_id)
-        if not user:
-            continue
-
-        leaderboard.append({
-            "user_id": user.id,
-            "pseudo": user.pseudo,
-            "score": score
-        })
-
-    leaderboard.sort(key=lambda x: x["score"], reverse=True)
-
-    for i, u in enumerate(leaderboard):
-        u["rank"] = i + 1
-
-        if i == 0:
-            u["status"] = "WINNER"
-        elif i < len(leaderboard) * 0.1:
-            u["status"] = "TOP_10"
-        else:
-            u["status"] = "LOSER"
-
-    # =========================
-    # 💾 SAVE IN DATABASE
-    # =========================
-
-    existing = db.query(LeaderboardDB).first()
-
-    if existing:
-        existing.data = json.dumps(leaderboard)
-    else:
-        existing = LeaderboardDB(
-            data=json.dumps(leaderboard)
-        )
-        db.add(existing)
-
-    db.commit()
-
-    return leaderboard
-
-@leaderboard_router.get("/me/{user_id}")
-def get_my_score(user_id: int, db: Session = Depends(get_db)):
-
-    leaderboard = rebuild_leaderboard(db)
-
-    me = next((u for u in leaderboard if u["user_id"] == user_id), None)
-
-    if not me:
-        return {
-            "score": 0,
-            "rank": None,
-            "status": "NONE"
-        }
-
-    return me
+    return result
