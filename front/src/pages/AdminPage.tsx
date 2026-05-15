@@ -20,6 +20,8 @@ export default function AdminPage() {
   const [leaderboard, setLeaderboard] = useState<any[]>([]);
 
   const [loading, setLoading] = useState(true);
+  const [loadingRecalc, setLoadingRecalc] = useState(false);
+
   const [published, setPublished] = useState(false);
   const [now, setNow] = useState(new Date());
 
@@ -37,7 +39,7 @@ export default function AdminPage() {
   const isAfterVote = now.getTime() > voteEnd;
 
   // =========================
-  // FETCH STATUS
+  // STATUS VOTE
   // =========================
   useEffect(() => {
     const fetchStatus = async () => {
@@ -53,7 +55,7 @@ export default function AdminPage() {
   }, []);
 
   // =========================
-  // FETCH USERS + VOTES
+  // USERS + VOTES
   // =========================
   useEffect(() => {
     const fetchData = async () => {
@@ -95,6 +97,39 @@ export default function AdminPage() {
     fetchLeaderboard();
   }, []);
 
+  // =========================
+  // CALCUL SCORES
+  // =========================
+  const recalcLeaderboard = async () => {
+    try {
+      setLoadingRecalc(true);
+
+      const res = await fetch(
+        "https://eurovision-back.onrender.com/leaderboard/recalculate",
+        {
+          method: "POST",
+        }
+      );
+
+      if (!res.ok) throw new Error();
+
+      const data = await res.json();
+
+      console.log("🧮 recalculated:", data);
+
+      setLeaderboard(data.leaderboard);
+
+    } catch (e) {
+      console.error(e);
+      alert("Erreur calcul leaderboard");
+    } finally {
+      setLoadingRecalc(false);
+    }
+  };
+
+  // =========================
+  // USERS STATUS
+  // =========================
   const usersWithStatus = users.map((u) => {
     const vote = votes.find((v) => v.user_id === u.id);
 
@@ -107,13 +142,8 @@ export default function AdminPage() {
   });
 
   // =========================
-  // PUBLISH CALLBACK
+  // LOADING
   // =========================
-  const publishResults = () => {
-    setPublished(true);
-    fetchLeaderboard();
-  };
-
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -122,6 +152,9 @@ export default function AdminPage() {
     );
   }
 
+  // =========================
+  // RENDER
+  // =========================
   return (
     <div className="min-h-screen px-4 py-6">
 
@@ -147,52 +180,65 @@ export default function AdminPage() {
         {/* RIGHT */}
         <div className="w-full md:w-2/3 space-y-4">
 
-          <VoteAdmin
-            defaultArtists={defaultArtists}
-            isAfterVote={published ? false : isAfterVote}
-            onPublish={publishResults}
-          />
+          {/* =========================
+              VOTE ADMIN
+          ========================= */}
+          <VoteAdmin defaultArtists={defaultArtists} />
 
           {/* =========================
-              LEADERBOARD PANEL
+              ACTIONS ADMIN
           ========================= */}
-          <div className="mt-6">
 
-            <button
-              onClick={fetchLeaderboard}
-              className="w-full py-3 rounded-xl bg-green-500 text-white font-bold"
-            >
-              🔄 Rafraîchir classement
-            </button>
+          <button
+            onClick={recalcLeaderboard}
+            disabled={loadingRecalc}
+            className="w-full py-3 rounded-xl bg-purple-500 text-white font-bold"
+          >
+            {loadingRecalc ? "⏳ Calcul..." : "🧮 Calculer les scores"}
+          </button>
 
-            <div className="space-y-2 mt-4">
-              {leaderboard.map((u) => (
-                <div
-                  key={u.user_id}
-                  className="flex justify-between items-center p-3 rounded-lg border bg-card"
-                >
-                  <div>
-                    <p className="font-bold">
-                      {u.pseudo || `User ${u.user_id}`}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      #{u.rank} • {u.status}
-                    </p>
-                  </div>
+          <button
+            onClick={fetchLeaderboard}
+            className="w-full py-3 rounded-xl bg-green-500 text-white font-bold"
+          >
+            🔄 Afficher classement
+          </button>
 
-                  <p className="text-xl font-bold text-primary">
-                    {u.score}
+          {/* =========================
+              LEADERBOARD
+          ========================= */}
+          <div className="space-y-2 mt-4">
+
+            {leaderboard.map((u) => (
+              <div
+                key={u.user_id}
+                className="flex justify-between items-center p-3 rounded-lg border bg-card"
+              >
+                <div>
+                  <p className="font-bold">
+                    User {u.user_id}
+                  </p>
+
+                  <p className="text-xs text-muted-foreground">
+                    #{u.rank} • {u.status}
                   </p>
                 </div>
-              ))}
-            </div>
+
+                <p className="text-xl font-bold text-primary">
+                  {u.score}
+                </p>
+              </div>
+            ))}
 
           </div>
 
+          {/* =========================
+              RESULT PAGE
+          ========================= */}
           {published && (
             <button
               onClick={() => navigate("/results")}
-              className="w-full mt-4 py-3 rounded-xl bg-purple-500 text-white font-bold"
+              className="w-full mt-4 py-3 rounded-xl bg-blue-500 text-white font-bold"
             >
               👀 Voir résultats
             </button>

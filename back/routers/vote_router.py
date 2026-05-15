@@ -107,9 +107,9 @@ def create_or_update_vote(
 @router.post("/submit")
 def submit_vote(payload: VoteCreate, db: Session = Depends(get_db)):
 
-    # 1. SAVE VOTE
     ranking_json = json.dumps(payload.ranking)
 
+    # 1. SAVE VOTE
     existing = db.query(VoteDB).filter(
         VoteDB.user_id == payload.user_id
     ).first()
@@ -126,125 +126,23 @@ def submit_vote(payload: VoteCreate, db: Session = Depends(get_db)):
 
     db.commit()
 
-    # 2. GET FINAL RESULTS
-    final = db.query(FinalResultDB).first()
-    if not final:
-        return {"error": "no final results"}
-
-    real_results = json.loads(final.results)
-
-    # 3. CALCUL SCORE
-    score = calculate_score(
-        json.loads(ranking_json),
-        real_results
-    )
-
-    # 4. UPSERT LEADERBOARD
+    # 2. UPSERT LEADERBOARD (juste stockage brut)
     lb = db.query(LeaderboardDB).filter(
         LeaderboardDB.user_id == payload.user_id
     ).first()
 
     if lb:
-        lb.score = score
+        lb.data = ranking_json   # 👈 on stocke le ranking brut
     else:
-        lb = LeaderboardDB(
+        db.add(LeaderboardDB(
             user_id=payload.user_id,
-            score=score
-        )
-        db.add(lb)
+            data=ranking_json
+        ))
 
     db.commit()
 
     return {
-        "message": "vote submitted",
-        "score": score
-    }
-
-
-# =========================================
-# SAVE DRAFT
-# =========================================
-@router.post("/draft")
-def save_draft(
-    payload: VoteCreate,
-    db: Session = Depends(get_db)
-):
-
-    vote = create_or_update_vote(
-        db=db,
-        payload=payload,
-        status="draft"
-    )
-
-    return {
-        "message": "draft saved",
-        "vote": serialize_vote(vote)
-    }
-
-
-# =========================================
-# PUBLISH RESULTS
-# =========================================
-@router.post("/publish")
-def publish_results(
-    payload: PublishResults,
-    db: Session = Depends(get_db)
-):
-
-    existing = db.query(FinalResultDB).first()
-
-    results_json = json.dumps(payload.results)
-
-    # UPDATE
-    if existing:
-        existing.results = results_json
-        existing.published = payload.published
-
-        db.commit()
-
-        return {
-            "message": "results updated"
-        }
-
-    # CREATE
-    result = FinalResultDB(
-        results=results_json,
-        published=payload.published
-    )
-
-    db.add(result)
-
-    db.commit()
-
-    return {
-        "message": "results created"
-    }
-
-
-# =========================================
-# GET LATEST RESULTS
-# =========================================
-@router.get("/latest")
-def get_latest_results(
-    db: Session = Depends(get_db)
-):
-
-    result = db.query(FinalResultDB).first()
-
-    if not result:
-        return {
-            "published": False,
-            "results": []
-        }
-
-    try:
-        results = json.loads(result.results)
-    except:
-        results = []
-
-    return {
-        "published": result.published,
-        "results": results
+        "message": "ok"
     }
 
 

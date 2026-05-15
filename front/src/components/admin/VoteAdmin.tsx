@@ -234,34 +234,6 @@ export default function VoteAdmin({
             : "🗳️ Envoyer vote"}
         </button>
 
-        {/* OFFICIAL */}
-        <button
-          onClick={publishOfficial}
-          disabled={!isAfterVote || loadingPublish}
-          className={`w-full py-3 rounded-xl font-bold text-white ${
-            isAfterVote
-              ? "bg-green-500"
-              : "bg-gray-400"
-          }`}
-        >
-          {isAfterVote
-            ? loadingPublish
-              ? "⏳ Publication..."
-              : "✅ Valider officiellement"
-            : "⏳ Après le vote"}
-        </button>
-
-        {/* SIMULATION */}
-        <button
-          onClick={publishFake}
-          disabled={loadingSimulation}
-          className="w-full py-3 rounded-xl bg-blue-500 text-white font-bold"
-        >
-          {loadingSimulation
-            ? "⏳ Simulation..."
-            : "🧪 Simulation (test)"}
-        </button>
-
       </div>
     </div>
   );
