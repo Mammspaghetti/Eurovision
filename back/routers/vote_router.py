@@ -1,136 +1,54 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
+
 from database.db import SessionLocal
+
 from models.vote import VoteDB
 from models.final_result import FinalResultDB
+
 from pydantic import BaseModel
+
 from typing import List, Dict
+
 import json
 
-router = APIRouter(prefix="/votes", tags=["Votes"])
+
+router = APIRouter(
+    prefix="/votes",
+    tags=["Votes"]
+)
 
 
+# =========================================
+# DATABASE
+# =========================================
 def get_db():
     db = SessionLocal()
+
     try:
         yield db
+
     finally:
         db.close()
 
 
+# =========================================
+# DTO
+# =========================================
 class VoteCreate(BaseModel):
     user_id: int
     ranking: List[Dict]
 
-# =========================
-# GET FINAL VOTE
-# =========================
-# @router.post("/publish")
-# def publish_results(payload: dict, db: Session = Depends(get_db)):
 
-#     existing = db.query(FinalResultDB).first()
+class PublishResults(BaseModel):
+    results: List[Dict]
+    published: bool = True
 
-#     if existing:
-#         existing.results = json.dumps(payload["results"])
-#         existing.published = True
 
-#         db.commit()
-
-#         return {"message": "results updated"}
-
-#     result = FinalResultDB(
-#         results=json.dumps(payload["results"]),
-#         published=True
-#     )
-
-#     db.add(result)
-
-#     db.commit()
-
-#     return {"message": "results created"}
-# =========================
-# SUBMIT FINAL VOTE
-# =========================
-@router.post("/submit")
-def submit_vote(payload: VoteCreate, db: Session = Depends(get_db)):
-
-    existing = db.query(VoteDB).filter(
-        VoteDB.user_id == payload.user_id
-    ).first()
-
-    if existing:
-        existing.ranking = json.dumps(payload.ranking)
-        existing.status = "submitted"
-
-        db.commit()
-
-        return {"message": "vote submitted"}
-
-    vote = VoteDB(
-        user_id=payload.user_id,
-        ranking=json.dumps(payload.ranking),
-        status="submitted"
-    )
-
-    db.add(vote)
-    db.commit()
-    db.refresh(vote)
-
-    return {
-        "message": "vote submitted",
-        "id": vote.id
-    }
-
-# =========================
-# GET FINAL VOTE
-# =========================
-@router.get("/latest")
-def get_latest_results(db: Session = Depends(get_db)):
-
-    result = db.query(FinalResultDB).first()
-
-    if not result:
-        return {
-            "published": False,
-            "results": []
-        }
-
-    return {
-        "published": result.published,
-        "results": json.loads(result.results)
-    }
-
-# =========================
-# GET VOTE
-# =========================
-@router.get("/")
-def get_votes(db: Session = Depends(get_db)):
-
-    votes = db.query(VoteDB).all()
-
-    return [
-        {
-            "id": v.id,
-            "user_id": v.user_id,
-            "ranking": json.loads(v.ranking) if v.ranking else [],
-            "status": v.status
-        }
-        for v in votes
-    ]
-
-@router.get("/{user_id}")
-def get_vote(user_id: int, db: Session = Depends(get_db)):
-
-    vote = db.query(VoteDB).filter(
-        VoteDB.user_id == user_id
-    ).first()
-
-    if not vote:
-        return {
-            "user_id": user_id,
-            "status": "none",
-            "ranking": []
-        }
+# =========================================
+# HELPERS
+# =========================================
+def serialize_vote(vote: VoteDB):
 
     try:
         ranking = json.loads(vote.ranking) if vote.ranking else []
@@ -145,30 +63,185 @@ def get_vote(user_id: int, db: Session = Depends(get_db)):
     }
 
 
-# =========================
-# SAVE DRAFT
-# =========================
-@router.post("/draft")
-def save_draft(payload: VoteCreate, db: Session = Depends(get_db)):
+def create_or_update_vote(
+    db: Session,
+    payload: VoteCreate,
+    status: str
+):
 
     existing = db.query(VoteDB).filter(
         VoteDB.user_id == payload.user_id
     ).first()
 
-    if existing:
-        existing.ranking = json.dumps(payload.ranking)
-        existing.status = "draft"
-        db.commit()
-        return {"message": "draft updated"}
+    ranking_json = json.dumps(payload.ranking)
 
+    # UPDATE
+    if existing:
+        existing.ranking = ranking_json
+        existing.status = status
+
+        db.commit()
+        db.refresh(existing)
+
+        return existing
+
+    # CREATE
     vote = VoteDB(
         user_id=payload.user_id,
-        ranking=json.dumps(payload.ranking),
-        status="draft"
+        ranking=ranking_json,
+        status=status
     )
 
     db.add(vote)
+
     db.commit()
     db.refresh(vote)
 
-    return {"message": "draft saved", "id": vote.id}
+    return vote
+
+
+# =========================================
+# SUBMIT FINAL VOTE
+# =========================================
+@router.post("/submit")
+def submit_vote(
+    payload: VoteCreate,
+    db: Session = Depends(get_db)
+):
+
+    vote = create_or_update_vote(
+        db=db,
+        payload=payload,
+        status="submitted"
+    )
+
+    return {
+        "message": "vote submitted",
+        "vote": serialize_vote(vote)
+    }
+
+
+# =========================================
+# SAVE DRAFT
+# =========================================
+@router.post("/draft")
+def save_draft(
+    payload: VoteCreate,
+    db: Session = Depends(get_db)
+):
+
+    vote = create_or_update_vote(
+        db=db,
+        payload=payload,
+        status="draft"
+    )
+
+    return {
+        "message": "draft saved",
+        "vote": serialize_vote(vote)
+    }
+
+
+# =========================================
+# PUBLISH RESULTS
+# =========================================
+@router.post("/publish")
+def publish_results(
+    payload: PublishResults,
+    db: Session = Depends(get_db)
+):
+
+    existing = db.query(FinalResultDB).first()
+
+    results_json = json.dumps(payload.results)
+
+    # UPDATE
+    if existing:
+        existing.results = results_json
+        existing.published = payload.published
+
+        db.commit()
+
+        return {
+            "message": "results updated"
+        }
+
+    # CREATE
+    result = FinalResultDB(
+        results=results_json,
+        published=payload.published
+    )
+
+    db.add(result)
+
+    db.commit()
+
+    return {
+        "message": "results created"
+    }
+
+
+# =========================================
+# GET LATEST RESULTS
+# =========================================
+@router.get("/latest")
+def get_latest_results(
+    db: Session = Depends(get_db)
+):
+
+    result = db.query(FinalResultDB).first()
+
+    if not result:
+        return {
+            "published": False,
+            "results": []
+        }
+
+    try:
+        results = json.loads(result.results)
+    except:
+        results = []
+
+    return {
+        "published": result.published,
+        "results": results
+    }
+
+
+# =========================================
+# GET ALL VOTES
+# =========================================
+@router.get("/")
+def get_votes(
+    db: Session = Depends(get_db)
+):
+
+    votes = db.query(VoteDB).all()
+
+    return [
+        serialize_vote(vote)
+        for vote in votes
+    ]
+
+
+# =========================================
+# GET USER VOTE
+# =========================================
+@router.get("/{user_id}")
+def get_vote(
+    user_id: int,
+    db: Session = Depends(get_db)
+):
+
+    vote = db.query(VoteDB).filter(
+        VoteDB.user_id == user_id
+    ).first()
+
+    if not vote:
+        return {
+            "user_id": user_id,
+            "status": "none",
+            "ranking": []
+        }
+
+    return serialize_vote(vote)
