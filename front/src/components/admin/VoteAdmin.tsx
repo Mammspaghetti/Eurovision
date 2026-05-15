@@ -90,15 +90,23 @@ export default function VoteAdmin({
         }
       );
 
-      if (!res.ok) {
-        throw new Error();
-      }
+      if (!res.ok) throw new Error();
 
       const data = await res.json();
 
-      console.log("✅ SUBMIT RESULT:", data);
+      console.log("📊 LEADERBOARD:", data);
 
-      alert("✅ Vote envoyé");
+      // 👉 ici tu peux stocker le leaderboard
+      localStorage.setItem(
+        "leaderboard",
+        JSON.stringify(data.leaderboard || [])
+      );
+
+      alert("✅ Vote envoyé + classement calculé");
+
+      // option : refresh UI
+      window.location.reload();
+
     } catch (err) {
       console.error(err);
       alert("❌ Erreur envoi vote");

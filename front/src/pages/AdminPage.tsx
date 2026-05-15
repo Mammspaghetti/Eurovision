@@ -6,7 +6,6 @@ import { artists as defaultArtists } from "@/data/artists";
 import HeaderAdmin from "@/components/admin/HeaderAdmin";
 import StatsAdmin from "@/components/admin/StatsAdmin";
 import VoteAdmin from "@/components/admin/VoteAdmin";
-import ResultAdmin from "@/components/admin/ResultAdmin";
 
 type VoteStatus = "submitted" | "draft" | "none";
 
@@ -18,11 +17,15 @@ export default function AdminPage() {
 
   const [users, setUsers] = useState<any[]>([]);
   const [votes, setVotes] = useState<any[]>([]);
+  const [leaderboard, setLeaderboard] = useState<any[]>([]);
+
   const [loading, setLoading] = useState(true);
   const [published, setPublished] = useState(false);
   const [now, setNow] = useState(new Date());
 
-  // ⏱ timer global
+  // =========================
+  // TIMER
+  // =========================
   useEffect(() => {
     const i = setInterval(() => setNow(new Date()), 1000);
     return () => clearInterval(i);
@@ -50,7 +53,7 @@ export default function AdminPage() {
   }, []);
 
   // =========================
-  // FETCH DATA
+  // FETCH USERS + VOTES
   // =========================
   useEffect(() => {
     const fetchData = async () => {
@@ -70,6 +73,28 @@ export default function AdminPage() {
     fetchData();
   }, []);
 
+  // =========================
+  // FETCH LEADERBOARD
+  // =========================
+  const fetchLeaderboard = async () => {
+    try {
+      const res = await fetch(
+        "https://eurovision-back.onrender.com/leaderboard/"
+      );
+
+      const data = await res.json();
+      setLeaderboard(data);
+
+    } catch (e) {
+      console.error(e);
+      alert("Erreur leaderboard");
+    }
+  };
+
+  useEffect(() => {
+    fetchLeaderboard();
+  }, []);
+
   const usersWithStatus = users.map((u) => {
     const vote = votes.find((v) => v.user_id === u.id);
 
@@ -82,11 +107,11 @@ export default function AdminPage() {
   });
 
   // =========================
-  // PUBLISH
+  // PUBLISH CALLBACK
   // =========================
-  const publishResults = (items: any) => {
-    localStorage.setItem("final_results", JSON.stringify(items));
+  const publishResults = () => {
     setPublished(true);
+    fetchLeaderboard();
   };
 
   if (loading) {
@@ -120,13 +145,49 @@ export default function AdminPage() {
         </div>
 
         {/* RIGHT */}
-        <div className="w-full md:w-2/3">
+        <div className="w-full md:w-2/3 space-y-4">
 
           <VoteAdmin
             defaultArtists={defaultArtists}
             isAfterVote={published ? false : isAfterVote}
             onPublish={publishResults}
           />
+
+          {/* =========================
+              LEADERBOARD PANEL
+          ========================= */}
+          <div className="mt-6">
+
+            <button
+              onClick={fetchLeaderboard}
+              className="w-full py-3 rounded-xl bg-green-500 text-white font-bold"
+            >
+              🔄 Rafraîchir classement
+            </button>
+
+            <div className="space-y-2 mt-4">
+              {leaderboard.map((u) => (
+                <div
+                  key={u.user_id}
+                  className="flex justify-between items-center p-3 rounded-lg border bg-card"
+                >
+                  <div>
+                    <p className="font-bold">
+                      {u.pseudo || `User ${u.user_id}`}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      #{u.rank} • {u.status}
+                    </p>
+                  </div>
+
+                  <p className="text-xl font-bold text-primary">
+                    {u.score}
+                  </p>
+                </div>
+              ))}
+            </div>
+
+          </div>
 
           {published && (
             <button

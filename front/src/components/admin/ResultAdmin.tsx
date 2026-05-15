@@ -1,44 +1,47 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 export default function ResultAdmin() {
+
   const [loading, setLoading] = useState(false);
   const [leaderboard, setLeaderboard] = useState<any[]>([]);
 
-  const calculateScores = async () => {
+  const fetchLeaderboard = async () => {
     setLoading(true);
 
     try {
       const res = await fetch(
-        "https://eurovision-back.onrender.com/leaderboard/rebuild",
-        {
-          method: "POST",
-        }
+        "https://eurovision-back.onrender.com/leaderboard/"
       );
 
       const data = await res.json();
-
       setLeaderboard(data);
+
     } catch (e) {
       console.error(e);
-      alert("Erreur calcul scores");
+      alert("Erreur chargement leaderboard");
     }
 
     setLoading(false);
   };
 
+  // auto load au montage
+  useEffect(() => {
+    fetchLeaderboard();
+  }, []);
+
   return (
     <div className="p-4 space-y-4">
 
-      {/* BUTTON */}
+      {/* BUTTON REFRESH */}
       <button
-        onClick={calculateScores}
+        onClick={fetchLeaderboard}
         disabled={loading}
         className="
           w-full py-3 rounded-xl
           bg-green-500 text-white font-bold
         "
       >
-        {loading ? "Calcul..." : "🧮 Calculer les scores"}
+        {loading ? "Chargement..." : "🔄 Rafraîchir classement"}
       </button>
 
       {/* LEADERBOARD */}
@@ -52,7 +55,7 @@ export default function ResultAdmin() {
             "
           >
             <div>
-              <p className="font-bold">{u.pseudo}</p>
+              <p className="font-bold">{u.pseudo || `User ${u.user_id}`}</p>
               <p className="text-xs text-muted-foreground">
                 #{u.rank} • {u.status}
               </p>
