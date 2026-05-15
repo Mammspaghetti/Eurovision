@@ -23,36 +23,104 @@ export default function VoteAdmin({
   isAfterVote,
 }) {
   const [items, setItems] = useState(defaultArtists);
-  const [loading, setLoading] = useState(false);
+
+  const [loadingPublish, setLoadingPublish] = useState(false);
+  const [loadingSimulation, setLoadingSimulation] = useState(false);
+  const [loadingSubmit, setLoadingSubmit] = useState(false);
 
   const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
-    useSensor(TouchSensor, { activationConstraint: { delay: 150, tolerance: 5 } })
+    useSensor(PointerSensor, {
+      activationConstraint: { distance: 5 },
+    }),
+    useSensor(TouchSensor, {
+      activationConstraint: {
+        delay: 150,
+        tolerance: 5,
+      },
+    })
   );
 
+  // =========================
+  // DND
+  // =========================
   const handleDragEnd = (event) => {
     const { active, over } = event;
+
     if (!over || active.id === over.id) return;
 
     setItems((prev) => {
-      const oldIndex = prev.findIndex((i) => i.id === active.id);
-      const newIndex = prev.findIndex((i) => i.id === over.id);
+      const oldIndex = prev.findIndex(
+        (i) => i.id === active.id
+      );
+
+      const newIndex = prev.findIndex(
+        (i) => i.id === over.id
+      );
+
       return arrayMove(prev, oldIndex, newIndex);
     });
   };
 
   // =========================
-  // OFFICIEL
+  // FORMAT RANKING
+  // =========================
+  const formattedRanking = items.map((artist, index) => ({
+    artist_id: artist.id,
+    position: index + 1,
+  }));
+
+  // =========================
+  // SUBMIT USER VOTE
+  // =========================
+  const submitVote = async () => {
+    try {
+      setLoadingSubmit(true);
+
+      const res = await fetch(
+        "https://eurovision-back.onrender.com/votes/submit",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            user_id: 999,
+            ranking: formattedRanking,
+          }),
+        }
+      );
+
+      if (!res.ok) {
+        throw new Error();
+      }
+
+      const data = await res.json();
+
+      console.log("✅ SUBMIT RESULT:", data);
+
+      alert("✅ Vote envoyé");
+    } catch (err) {
+      console.error(err);
+      alert("❌ Erreur envoi vote");
+    } finally {
+      setLoadingSubmit(false);
+    }
+  };
+
+  // =========================
+  // OFFICIAL PUBLISH
   // =========================
   const publishOfficial = async () => {
     try {
-      setLoading(true);
+      setLoadingPublish(true);
 
       const res = await fetch(
         "https://eurovision-back.onrender.com/votes/publish",
         {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+          },
           body: JSON.stringify({
             results: items,
             published: true,
@@ -60,58 +128,69 @@ export default function VoteAdmin({
         }
       );
 
-      if (!res.ok) throw new Error();
+      if (!res.ok) {
+        throw new Error();
+      }
 
-      alert("✅ Résultats officiels publiés");
+      alert("✅ Résultats publiés");
+
       onPublish(items);
     } catch (err) {
       console.error(err);
       alert("❌ Erreur publication");
     } finally {
-      setLoading(false);
+      setLoadingPublish(false);
     }
   };
 
   // =========================
-  // SIMULATION (faux vote)
+  // SIMULATION
   // =========================
   const publishFake = async () => {
     try {
-      setLoading(true);
+      setLoadingSimulation(true);
 
       const res = await fetch(
         "https://eurovision-back.onrender.com/leaderboard/simulate",
         {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+          },
           body: JSON.stringify({
-            results: items.map(a => ({
-              id: a.id
-            }))
-          })
+            results: items.map((a) => ({
+              id: a.id,
+            })),
+          }),
         }
       );
+
+      if (!res.ok) {
+        throw new Error();
+      }
 
       const data = await res.json();
 
       console.log("🧪 SIMULATION RESULT:", data);
 
-      // tu peux stocker localement si tu veux
-      localStorage.setItem("simulation_leaderboard", JSON.stringify(data));
+      localStorage.setItem(
+        "simulation_leaderboard",
+        JSON.stringify(data)
+      );
 
       alert("🧪 Simulation OK");
-    } catch (e) {
-      console.error(e);
-      alert("❌ erreur simulation");
+    } catch (err) {
+      console.error(err);
+      alert("❌ Erreur simulation");
     } finally {
-      setLoading(false);
+      setLoadingSimulation(false);
     }
   };
 
   return (
     <div>
 
-      {/* LISTE DRAG */}
+      {/* LIST */}
       <DndContext
         sensors={sensors}
         collisionDetection={closestCenter}
@@ -136,16 +215,29 @@ export default function VoteAdmin({
       {/* ACTIONS */}
       <div className="space-y-3">
 
-        {/* OFFICIEL */}
+        {/* SUBMIT VOTE */}
+        <button
+          onClick={submitVote}
+          disabled={loadingSubmit}
+          className="w-full py-3 rounded-xl bg-purple-500 text-white font-bold"
+        >
+          {loadingSubmit
+            ? "⏳ Envoi..."
+            : "🗳️ Envoyer vote"}
+        </button>
+
+        {/* OFFICIAL */}
         <button
           onClick={publishOfficial}
-          disabled={!isAfterVote || loading}
+          disabled={!isAfterVote || loadingPublish}
           className={`w-full py-3 rounded-xl font-bold text-white ${
-            isAfterVote ? "bg-green-500" : "bg-gray-400"
+            isAfterVote
+              ? "bg-green-500"
+              : "bg-gray-400"
           }`}
         >
           {isAfterVote
-            ? loading
+            ? loadingPublish
               ? "⏳ Publication..."
               : "✅ Valider officiellement"
             : "⏳ Après le vote"}
@@ -154,14 +246,15 @@ export default function VoteAdmin({
         {/* SIMULATION */}
         <button
           onClick={publishFake}
-          disabled={loading}
+          disabled={loadingSimulation}
           className="w-full py-3 rounded-xl bg-blue-500 text-white font-bold"
         >
-          🧪 Simulation (test)
+          {loadingSimulation
+            ? "⏳ Simulation..."
+            : "🧪 Simulation (test)"}
         </button>
 
       </div>
-
     </div>
   );
 }

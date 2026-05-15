@@ -124,7 +124,7 @@ export default function AdminPage() {
 
           <VoteAdmin
             defaultArtists={defaultArtists}
-            isAfterVote={isAfterVote}
+            isAfterVote={published ? false : isAfterVote}
             onPublish={publishResults}
           />
 
