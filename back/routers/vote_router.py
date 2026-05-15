@@ -104,21 +104,40 @@ def create_or_update_vote(
 # SUBMIT FINAL VOTE
 # =========================================
 @router.post("/submit")
-def submit_vote(
-    payload: VoteCreate,
-    db: Session = Depends(get_db)
-):
+def submit_vote(payload: VoteCreate, db: Session = Depends(get_db)):
 
-    vote = create_or_update_vote(
-        db=db,
-        payload=payload,
-        status="submitted"
-    )
+    try:
+        existing = db.query(VoteDB).filter(
+            VoteDB.user_id == payload.user_id
+        ).first()
 
-    return {
-        "message": "vote submitted",
-        "vote": serialize_vote(vote)
-    }
+        ranking_json = json.dumps(payload.ranking or [])
+
+        if existing:
+            existing.ranking = ranking_json
+            existing.status = "submitted"
+            db.commit()
+
+            return {"message": "vote submitted"}
+
+        vote = VoteDB(
+            user_id=payload.user_id,
+            ranking=ranking_json,
+            status="submitted"
+        )
+
+        db.add(vote)
+        db.commit()
+        db.refresh(vote)
+
+        return {
+            "message": "vote submitted",
+            "id": vote.id
+        }
+
+    except Exception as e:
+        print("ERROR /submit:", str(e))
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 # =========================================

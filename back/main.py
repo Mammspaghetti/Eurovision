@@ -22,10 +22,10 @@ origins = [
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,   # front autorisé
-    allow_credentials=True,
-    allow_methods=["*"],     # autorise GET, POST, OPTIONS...
-    allow_headers=["*"],     # autorise Content-Type, Authorization...
+    allow_origins=["*"],
+    allow_credentials=False,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 # ======= Routers =======
