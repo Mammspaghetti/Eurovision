@@ -155,23 +155,9 @@ def submit_vote(payload: VoteCreate, db: Session = Depends(get_db)):
 
     db.commit()
 
-    # 5. RETURN UPDATED LEADERBOARD (IMPORTANT)
-    leaderboard = db.query(LeaderboardDB).all()
-    leaderboard.sort(key=lambda x: x.score, reverse=True)
-
-    response = []
-
-    for i, r in enumerate(leaderboard):
-        response.append({
-            "user_id": r.user_id,
-            "score": r.score,
-            "rank": i + 1,
-            "status": "WINNER" if i == 0 else "TOP_10" if i < len(leaderboard)*0.1 else "LOSER"
-        })
-
     return {
         "message": "vote submitted",
-        "leaderboard": response
+        "score": score
     }
 
 
