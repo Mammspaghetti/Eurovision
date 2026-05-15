@@ -107,6 +107,7 @@ def create_or_update_vote(
 def submit_vote(payload: VoteCreate, db: Session = Depends(get_db)):
 
     try:
+        # 1. UPSERT vote user
         existing = db.query(VoteDB).filter(
             VoteDB.user_id == payload.user_id
         ).first()
@@ -116,27 +117,69 @@ def submit_vote(payload: VoteCreate, db: Session = Depends(get_db)):
         if existing:
             existing.ranking = ranking_json
             existing.status = "submitted"
-            db.commit()
+        else:
+            vote = VoteDB(
+                user_id=payload.user_id,
+                ranking=ranking_json,
+                status="submitted"
+            )
+            db.add(vote)
 
-            return {"message": "vote submitted"}
+        db.commit()
 
-        vote = VoteDB(
-            user_id=payload.user_id,
-            ranking=ranking_json,
-            status="submitted"
+        # 2. recalcul global leaderboard
+        all_votes = db.query(VoteDB).filter(
+            VoteDB.status == "submitted"
+        ).all()
+
+        aggregated = {}
+
+        for v in all_votes:
+            ranking = json.loads(v.ranking or "[]")
+
+            for item in ranking:
+                artist_id = item["artist_id"]
+                position = item["position"]
+
+                if artist_id not in aggregated:
+                    aggregated[artist_id] = 0
+
+                # score simple (inverse ranking)
+                aggregated[artist_id] += (100 - position)
+
+        # 3. transformer en liste triée
+        results = sorted(
+            aggregated.items(),
+            key=lambda x: x[1],
+            reverse=True
         )
 
-        db.add(vote)
+        final = [
+            {"artist_id": k, "score": v}
+            for k, v in results
+        ]
+
+        # 4. UPSERT FinalResultDB
+        existing_final = db.query(FinalResultDB).first()
+
+        if existing_final:
+            existing_final.results = json.dumps(final)
+            existing_final.published = True
+        else:
+            db.add(FinalResultDB(
+                results=json.dumps(final),
+                published=True
+            ))
+
         db.commit()
-        db.refresh(vote)
 
         return {
-            "message": "vote submitted",
-            "id": vote.id
+            "message": "vote submitted + leaderboard updated",
+            "results": final
         }
 
     except Exception as e:
-        print("ERROR /submit:", str(e))
+        print("ERROR:", str(e))
         raise HTTPException(status_code=500, detail=str(e))
 
 
