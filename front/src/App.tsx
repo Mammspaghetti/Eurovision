@@ -11,6 +11,7 @@ import VotePage from "./pages/VotePage";
 import NotFound from "./pages/NotFound";
 import ResultsPage from "./pages/ResultsPage";
 import AdminPage from "./pages/AdminPage";
+import CreateAcountPage from "./pages/CreateAcountPage";
 
 const queryClient = new QueryClient();
 

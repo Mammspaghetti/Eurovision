@@ -44,11 +44,11 @@ export default function AdminPage() {
   const isAfterVote = now.getTime() > voteEnd;
 
   // =========================
-  // FETCH STATUS
+  // FETCH  FROM VOTE FINAL
   // =========================
   const fetchStatus = async () => {
     const res = await fetch(
-      "https://eurovision-back.onrender.com/votes/latest"
+      "https://eurovision-back.onrender.com/votes/final"
     );
 
     const data = await res.json();
@@ -83,10 +83,6 @@ export default function AdminPage() {
     setLeaderboard(data);
   };
 
-  const formatRank = (n: number) => {
-    if (n === 1) return "1er";
-    return `${n}e`;
-  };
 
   // =========================
   // INIT LOAD

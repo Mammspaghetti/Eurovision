@@ -21,21 +21,48 @@ const ResultsPage = () => {
   const [revealed, setRevealed] = useState(0);
   const [showPopup, setShowPopup] = useState(false);
 
+  const [leaderboard, setLeaderboard] = useState<any[]>([]);
+
   const ranking = useMemo(() => {
     return JSON.parse(localStorage.getItem("user_ranking") || "[]");
   }, []);
 
   const { realResults: apiResults, published, loading } = useFinalResults();
 
+  // =========================
+  // FETCH LEADERBOARD
+  // =========================
+  const fetchLeaderboard = async () => {
+    try {
+      const res = await fetch(
+        "https://eurovision-back.onrender.com/leaderboard/"
+      );
+
+      const data = await res.json();
+      setLeaderboard(data);
+    } catch (e) {
+      console.error("Leaderboard error", e);
+    }
+  };
+
+  // =========================
+  // LOAD LEADERBOARD SI PUBLIÉ
+  // =========================
+  useEffect(() => {
+    if (published) {
+      fetchLeaderboard();
+    }
+  }, [published]);
+
   /**
-   * 🎲 mock stable (simulation)
+   * 🎲 simulation mock
    */
   const mockResults = useMemo(() => {
     return [...allArtists].sort(() => 0.5 - Math.random());
   }, []);
 
   /**
-   * 🧠 source unique des résultats
+   * 🧠 source résultats
    */
   const results = useMemo(() => {
     return published && apiResults?.length
@@ -46,27 +73,23 @@ const ResultsPage = () => {
   const isSimulation = !published;
 
   /**
-   * 🔐 redirect si pas connecté
+   * 🔐 redirect
    */
   useEffect(() => {
     if (!user) navigate("/");
   }, [user, navigate]);
 
   /**
-   * 📢 popup officiel / simulation
+   * popup
    */
   useEffect(() => {
     setShowPopup(true);
-
-    const t = setTimeout(() => {
-      setShowPopup(false);
-    }, 2500);
-
+    const t = setTimeout(() => setShowPopup(false), 2500);
     return () => clearTimeout(t);
   }, [published]);
 
   /**
-   * 🎬 reveal animation podium
+   * reveal animation
    */
   useEffect(() => {
     if (revealed < results.length) {
@@ -78,17 +101,18 @@ const ResultsPage = () => {
   if (!user) return null;
 
   if (loading) {
-    return (
-      <div className="flex justify-center mt-20">
-        Loading...
-      </div>
-    );
+    return <div className="flex justify-center mt-20">Loading...</div>;
   }
+
+  // =========================
+  // USER DATA (REAL LEADERBOARD)
+  // =========================
+  const userEntry = leaderboard.find((u) => u.user_id === user.id);
 
   return (
     <div className="min-h-screen px-4 py-6 max-w-lg mx-auto">
 
-      {/* 🧪 / 📢 POPUP */}
+      {/* POPUP */}
       {showPopup && (
         <div
           className={`fixed top-4 left-1/2 -translate-x-1/2 px-4 py-2 rounded-xl shadow-lg text-white
@@ -102,41 +126,78 @@ const ResultsPage = () => {
 
       <ResultsHeader onBack={() => navigate("/vote")} />
 
-      {/* 🧪 MODE SIMULATION BANNER */}
+      {/* SIMULATION BANNER */}
       {isSimulation && (
         <div className="mb-4 p-3 text-center text-sm rounded-lg border border-yellow-400/40 bg-yellow-500/10">
           🧪 Mode simulation — résultats non officiels
         </div>
       )}
 
-      <ResultsUserCard
-        pseudo={user.pseudo}
-        ranking={ranking}
-        realResults={results}
-      />
+      {/* =========================
+          🔥 REAL RESULTS MODE
+          ========================= */}
+      {published && leaderboard.length > 0 ? (
+        <>
+          {/* USER SCORE / RANK */}
+          <div className="mb-4 p-4 rounded-xl border bg-card">
+            <p className="text-sm text-muted-foreground">Ton résultat</p>
+            <p className="text-xl font-bold">
+              #{userEntry?.rank ?? "?"} • {userEntry?.score ?? 0} pts
+            </p>
+          </div>
 
-      <ResultsPodium
-        realResults={results}
-        revealed={revealed}
-      />
+          {/* PODIUM + LEADERBOARD */}
+          <ResultsPodium realResults={results} revealed={revealed} />
 
-      {showComparison ? (
-        <ResultsComparison
-          ranking={ranking}
-          realResults={results}
-        />
+          <div className="space-y-2 mt-4">
+            {leaderboard.map((u: any, index: number) => (
+              <div
+                key={u.user_id}
+                className="flex justify-between p-3 rounded-lg border bg-card"
+              >
+                <div>
+                  <p className="font-bold">
+                    #{index + 1} {u.pseudo || `User ${u.user_id}`}
+                  </p>
+                </div>
+
+                <p className="font-bold text-primary">
+                  {u.score}
+                </p>
+              </div>
+            ))}
+          </div>
+        </>
       ) : (
-        <ResultsRanking
-          realResults={results}
-          revealed={revealed}
-        />
-      )}
+        <>
+          {/* =========================
+              🧪 SIMULATION MODE
+              ========================= */}
 
-      <ResultsToggle
-        showComparison={showComparison}
-        setShowComparison={setShowComparison}
-        disabled={!ranking}
-      />
+          <ResultsUserCard
+            pseudo={user.pseudo}
+            ranking={ranking}
+            realResults={results}
+          />
+
+          <ResultsPodium realResults={results} revealed={revealed} />
+
+          {showComparison ? (
+            <ResultsComparison
+              ranking={ranking}
+              realResults={results}
+            />
+          ) : (
+            <ResultsRanking realResults={results} />
+          )}
+
+          <ResultsToggle
+            showComparison={showComparison}
+            setShowComparison={setShowComparison}
+            disabled={!ranking}
+          />
+        </>
+      )}
     </div>
   );
 };
