@@ -108,14 +108,22 @@ def recalculate_leaderboard(db: Session = Depends(get_db)):
 @leaderboard_router.get("/")
 def get_leaderboard(db: Session = Depends(get_db)):
 
-    rows = db.query(LeaderboardDB).order_by(LeaderboardDB.rank.asc()).all()
+    rows = (
+        db.query(LeaderboardDB, UserDB)
+        .join(UserDB, UserDB.id == LeaderboardDB.user_id)
+        .order_by(LeaderboardDB.score.desc())
+        .all()
+    )
 
-    return [
-        {
-            "user_id": r.user_id,
-            "score": r.score,
-            "rank": r.rank,
-            "status": r.status
-        }
-        for r in rows
-    ]
+    result = []
+
+    for i, (lb, user) in enumerate(rows):
+        result.append({
+            "user_id": lb.user_id,
+            "pseudo": user.pseudo,  # 👈 IMPORTANT
+            "score": lb.score,
+            "rank": i + 1,
+            "status": lb.status
+        })
+
+    return result

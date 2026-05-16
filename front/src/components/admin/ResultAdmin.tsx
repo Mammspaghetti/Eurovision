@@ -1,73 +1,40 @@
-import { useState, useEffect } from "react";
+type Props = {
+  leaderboard: any[];
+  onClose: () => void;
+};
 
-export default function ResultAdmin() {
-
-  const [loading, setLoading] = useState(false);
-  const [leaderboard, setLeaderboard] = useState<any[]>([]);
-
-  const fetchLeaderboard = async () => {
-    setLoading(true);
-
-    try {
-      const res = await fetch(
-        "https://eurovision-back.onrender.com/leaderboard/"
-      );
-
-      const data = await res.json();
-      setLeaderboard(data);
-
-    } catch (e) {
-      console.error(e);
-      alert("Erreur chargement leaderboard");
-    }
-
-    setLoading(false);
-  };
-
-  // auto load au montage
-  useEffect(() => {
-    fetchLeaderboard();
-  }, []);
-
+export default function ResultAdminPopup({ leaderboard, onClose }: Props) {
   return (
-    <div className="p-4 space-y-4">
+    <div className="fixed inset-0 bg-black/60 flex items-center justify-center">
+      
+      <div className="bg-card p-6 rounded-xl w-[400px] space-y-3">
 
-      {/* BUTTON REFRESH */}
-      <button
-        onClick={fetchLeaderboard}
-        disabled={loading}
-        className="
-          w-full py-3 rounded-xl
-          bg-green-500 text-white font-bold
-        "
-      >
-        {loading ? "Chargement..." : "🔄 Rafraîchir classement"}
-      </button>
+        <h2 className="text-xl font-bold">🏆 Classement final</h2>
 
-      {/* LEADERBOARD */}
-      <div className="space-y-2 mt-4">
-        {leaderboard.map((u) => (
-          <div
-            key={u.user_id}
-            className="
-              flex justify-between items-center
-              p-3 rounded-lg border bg-card
-            "
-          >
-            <div>
-              <p className="font-bold">{u.pseudo || `User ${u.user_id}`}</p>
-              <p className="text-xs text-muted-foreground">
-                #{u.rank} • {u.status}
+        <button onClick={onClose} className="absolute top-3 right-3">
+          ✖
+        </button>
+
+        <div className="space-y-2 max-h-[400px] overflow-auto">
+
+          {leaderboard.map((u, i) => (
+            <div
+              key={u.user_id}
+              className="flex justify-between p-2 border rounded"
+            >
+              <p>
+                {i + 1}. User {u.user_id}
+              </p>
+
+              <p className="font-bold text-primary">
+                {u.score}
               </p>
             </div>
+          ))}
 
-            <p className="text-xl font-bold text-primary">
-              {u.score}
-            </p>
-          </div>
-        ))}
+        </div>
+
       </div>
-
     </div>
   );
 }
