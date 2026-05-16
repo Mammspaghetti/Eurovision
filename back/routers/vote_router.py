@@ -138,15 +138,13 @@ def submit_vote(payload: VoteCreate, db: Session = Depends(get_db)):
 # SUBMIT FINAL VOTE ID == 1 et ADMIN
 # =========================================
 @router.post("/submit/final")
-def submit_final(payload: VoteCreate, db: Session = Depends(get_db)):
+def submit_final(payload: FinalVoteCreate, db: Session = Depends(get_db)):
 
-    # 🔥 on écrase toujours le dernier final (option simple)
+    # supprime ancien final
     db.query(FinalResultDB).delete()
 
     final = FinalResultDB(
-        results=json.dumps([
-            r.model_dump() for r in payload.ranking
-        ]),
+        results=json.dumps(payload.ranking),
         published=True
     )
 
@@ -176,6 +174,28 @@ def get_votes(
     ]
 
 
+@router.get("/final")
+def get_final(db: Session = Depends(get_db)):
+
+    final = db.query(FinalResultDB).order_by(FinalResultDB.id.desc()).first()
+
+    if not final:
+        return {
+            "error": "no final results"
+        }
+
+    try:
+        results = json.loads(final.results)
+    except:
+        results = []
+
+    return {
+        "published": final.published,
+        "results": results
+    }
+
+
+
 # =========================================
 # GET USER VOTE
 # =========================================
@@ -197,23 +217,3 @@ def get_vote(
         }
 
     return serialize_vote(vote)
-
-@router.get("/final")
-def get_final(db: Session = Depends(get_db)):
-
-    final = db.query(FinalResultDB).order_by(FinalResultDB.id.desc()).first()
-
-    if not final:
-        return {
-            "error": "no final results"
-        }
-
-    try:
-        results = json.loads(final.results)
-    except:
-        results = []
-
-    return {
-        "published": final.published,
-        "results": results
-    }

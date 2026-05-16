@@ -110,7 +110,7 @@ export default function AdminPage() {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            ranking,
+            ranking
           }),
         }
       );
@@ -119,15 +119,14 @@ export default function AdminPage() {
 
       const data = await res.json();
 
-      console.log("📊 FINAL RESULT:", data);
+      console.log("FINAL OK:", data);
 
-      await fetchUsersAndVotes();
       await fetchLeaderboard();
 
-      alert("✅ Résultat final publié");
+      alert("✅ Final publié");
     } catch (err) {
       console.error(err);
-      alert("❌ Erreur publication final");
+      alert("❌ erreur final");
     }
   };
 
