@@ -17,19 +17,22 @@ def get_db():
     finally:
         db.close()
 
-def calculate_score(ranking, real_results):
+def calculate_score(user_ranking, real_results):
 
     score = 0
 
-    for item in ranking:
+    # map final positions (0-based)
+    final_map = {
+        str(a["artist_id"]): a["position"] - 1
+        for a in real_results
+    }
+
+    for item in user_ranking:
 
         artist_id = str(item["artist_id"])
         user_pos = item["position"] - 1
 
-        real_pos = next(
-            (i for i, a in enumerate(real_results) if str(a["id"]) == artist_id),
-            None
-        )
+        real_pos = final_map.get(artist_id)
 
         if real_pos is None:
             continue
@@ -43,19 +46,22 @@ def calculate_score(ranking, real_results):
 @leaderboard_router.post("/recalculate")
 def recalculate_leaderboard(db: Session = Depends(get_db)):
 
-    final = db.query(FinalResultDB).first()
+    final = db.query(FinalResultDB).order_by(FinalResultDB.id.desc()).first()
+
     if not final:
         return {"error": "no final results"}
 
-    real_results = json.loads(final.results)
+    try:
+        real_results = json.loads(final.results or "[]")
+    except Exception as e:
+        return {"error": f"invalid final json: {str(e)}"}
 
     votes = db.query(VoteDB).all()
 
-    # 🧹 reset table propre
     db.query(LeaderboardDB).delete()
     db.commit()
 
-    computed = []
+    leaderboard = []
 
     for v in votes:
 
@@ -66,33 +72,37 @@ def recalculate_leaderboard(db: Session = Depends(get_db)):
 
         score = calculate_score(ranking, real_results)
 
-        computed.append({
+        lb = LeaderboardDB(
+            user_id=v.user_id,
+            score=score
+        )
+
+        db.add(lb)
+
+        leaderboard.append({
             "user_id": v.user_id,
             "score": score
         })
 
-    # 🔥 sort
-    computed.sort(key=lambda x: x["score"], reverse=True)
-
-    # 💾 insert DB avec rank + status
-    for i, u in enumerate(computed):
-
-        db.add(LeaderboardDB(
-            user_id=u["user_id"],
-            score=u["score"],
-            rank=i + 1,
-            status=(
-                "WINNER" if i == 0
-                else "TOP_10" if i < max(1, int(len(computed) * 0.1))
-                else "LOSER"
-            )
-        ))
-
     db.commit()
 
+    leaderboard.sort(key=lambda x: x["score"], reverse=True)
+
+    total = len(leaderboard)
+
+    for i, u in enumerate(leaderboard):
+        u["rank"] = i + 1
+        u["total"] = total
+
+        u["status"] = (
+            "WINNER" if i == 0
+            else "TOP_10" if i < total * 0.1
+            else "LOSER"
+        )
+
     return {
-        "message": "leaderboard recalculated",
-        "leaderboard": computed
+        "message": "ok",
+        "leaderboard": leaderboard
     }
 
 @leaderboard_router.get("/")
