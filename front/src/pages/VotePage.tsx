@@ -211,7 +211,7 @@ const VotePage = () => {
     try {
 
       const res = await fetch(
-        "https://eurovision-back.onrender.com/votes/",
+        "https://eurovision-back.onrender.com/votes/submit",
         {
           method: "POST",
 

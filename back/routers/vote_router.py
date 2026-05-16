@@ -125,7 +125,14 @@ def submit_vote(payload: VoteCreate, db: Session = Depends(get_db)):
 
     db.commit()
 
-    return {"message": "ok"}
+    return {
+        "message": "ok",
+        "vote": {
+            "user_id": existing.user_id if existing else payload.user_id,
+            "ranking": payload.ranking,
+            "status": "submitted"
+        }
+    }
 
 
 # =========================================

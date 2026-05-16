@@ -39,66 +39,102 @@ export default function AdminPage() {
   const isAfterVote = now.getTime() > voteEnd;
 
   // =========================
-  // STATUS VOTE
+  // FETCH STATUS
   // =========================
-  useEffect(() => {
-    const fetchStatus = async () => {
-      const res = await fetch(
-        "https://eurovision-back.onrender.com/votes/latest"
-      );
+  const fetchStatus = async () => {
+    const res = await fetch(
+      "https://eurovision-back.onrender.com/votes/latest"
+    );
 
-      const data = await res.json();
-      setPublished(data.published);
-    };
-
-    fetchStatus();
-  }, []);
+    const data = await res.json();
+    setPublished(data.published);
+  };
 
   // =========================
-  // USERS + VOTES
+  // FETCH USERS + VOTES
   // =========================
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const [usersRes, votesRes] = await Promise.all([
-          fetch("https://eurovision-back.onrender.com/users/"),
-          fetch("https://eurovision-back.onrender.com/votes/")
-        ]);
+  const fetchUsersAndVotes = async () => {
+    const [usersRes, votesRes] = await Promise.all([
+      fetch("https://eurovision-back.onrender.com/users/"),
+      fetch("https://eurovision-back.onrender.com/votes/"),
+    ]);
 
-        setUsers(await usersRes.json());
-        setVotes(await votesRes.json());
-      } finally {
-        setLoading(false);
-      }
-    };
+    const usersData = await usersRes.json();
+    const votesData = await votesRes.json();
 
-    fetchData();
-  }, []);
+    setUsers(usersData);
+    setVotes(votesData);
+  };
 
   // =========================
   // FETCH LEADERBOARD
   // =========================
   const fetchLeaderboard = async () => {
-    try {
-      const res = await fetch(
-        "https://eurovision-back.onrender.com/leaderboard/"
-      );
+    const res = await fetch(
+      "https://eurovision-back.onrender.com/leaderboard/"
+    );
 
-      const data = await res.json();
-      setLeaderboard(data);
-
-    } catch (e) {
-      console.error(e);
-      alert("Erreur leaderboard");
-    }
+    const data = await res.json();
+    setLeaderboard(data);
   };
 
+  // =========================
+  // INIT LOAD
+  // =========================
   useEffect(() => {
-    fetchLeaderboard();
+    const load = async () => {
+      try {
+        await Promise.all([
+          fetchUsersAndVotes(),
+          fetchLeaderboard(),
+          fetchStatus(),
+        ]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    load();
   }, []);
 
   // =========================
-  // CALCUL SCORES
+  // SUBMIT VOTE
+  // =========================
+  const submitVote = async (ranking: any[]) => {
+    try {
+      const res = await fetch(
+        "https://eurovision-back.onrender.com/votes/submit",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            user_id: 1,
+            ranking,
+          }),
+        }
+      );
+
+      if (!res.ok) throw new Error();
+
+      const data = await res.json();
+
+      console.log("📊 RESULT:", data);
+
+      // refresh propre
+      await fetchUsersAndVotes();
+      await fetchLeaderboard();
+
+      alert("✅ Vote envoyé");
+    } catch (err) {
+      console.error(err);
+      alert("❌ Erreur envoi vote");
+    }
+  };
+
+  // =========================
+  // RECALC LEADERBOARD
   // =========================
   const recalcLeaderboard = async () => {
     try {
@@ -114,8 +150,6 @@ export default function AdminPage() {
       if (!res.ok) throw new Error();
 
       const data = await res.json();
-
-      console.log("🧮 recalculated:", data);
 
       setLeaderboard(data.leaderboard);
 
@@ -180,14 +214,10 @@ export default function AdminPage() {
         {/* RIGHT */}
         <div className="w-full md:w-2/3 space-y-4">
 
-          {/* =========================
-              VOTE ADMIN
-          ========================= */}
-          <VoteAdmin defaultArtists={defaultArtists} />
-
-          {/* =========================
-              ACTIONS ADMIN
-          ========================= */}
+          <VoteAdmin
+            defaultArtists={defaultArtists}
+            onSubmit={submitVote}
+          />
 
           <button
             onClick={recalcLeaderboard}
@@ -204,21 +234,14 @@ export default function AdminPage() {
             🔄 Afficher classement
           </button>
 
-          {/* =========================
-              LEADERBOARD
-          ========================= */}
           <div className="space-y-2 mt-4">
-
             {leaderboard.map((u) => (
               <div
                 key={u.user_id}
                 className="flex justify-between items-center p-3 rounded-lg border bg-card"
               >
                 <div>
-                  <p className="font-bold">
-                    User {u.user_id}
-                  </p>
-
+                  <p className="font-bold">User {u.user_id}</p>
                   <p className="text-xs text-muted-foreground">
                     #{u.rank} • {u.status}
                   </p>
@@ -229,12 +252,8 @@ export default function AdminPage() {
                 </p>
               </div>
             ))}
-
           </div>
 
-          {/* =========================
-              RESULT PAGE
-          ========================= */}
           {published && (
             <button
               onClick={() => navigate("/results")}

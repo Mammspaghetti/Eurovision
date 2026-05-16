@@ -19,13 +19,13 @@ import SortableArtist from "@/components/SortableArtist";
 
 export default function VoteAdmin({
   defaultArtists,
-  onPublish,
-  isAfterVote,
+  onSubmit,
+}: {
+  defaultArtists: any[];
+  onSubmit: (ranking: any[]) => void;
 }) {
   const [items, setItems] = useState(defaultArtists);
 
-  const [loadingPublish, setLoadingPublish] = useState(false);
-  const [loadingSimulation, setLoadingSimulation] = useState(false);
   const [loadingSubmit, setLoadingSubmit] = useState(false);
 
   const sensors = useSensors(
@@ -43,19 +43,14 @@ export default function VoteAdmin({
   // =========================
   // DND
   // =========================
-  const handleDragEnd = (event) => {
+  const handleDragEnd = (event: any) => {
     const { active, over } = event;
 
     if (!over || active.id === over.id) return;
 
     setItems((prev) => {
-      const oldIndex = prev.findIndex(
-        (i) => i.id === active.id
-      );
-
-      const newIndex = prev.findIndex(
-        (i) => i.id === over.id
-      );
+      const oldIndex = prev.findIndex((i) => i.id === active.id);
+      const newIndex = prev.findIndex((i) => i.id === over.id);
 
       return arrayMove(prev, oldIndex, newIndex);
     });
@@ -70,134 +65,19 @@ export default function VoteAdmin({
   }));
 
   // =========================
-  // SUBMIT USER VOTE
+  // SUBMIT
   // =========================
-  const submitVote = async () => {
+  const handleSubmit = async () => {
     try {
       setLoadingSubmit(true);
-
-      const res = await fetch(
-        "https://eurovision-back.onrender.com/votes/submit",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            user_id: 1,
-            ranking: formattedRanking,
-          }),
-        }
-      );
-
-      if (!res.ok) throw new Error();
-
-      const data = await res.json();
-
-      console.log("📊 LEADERBOARD:", data);
-
-      // 👉 ici tu peux stocker le leaderboard
-      localStorage.setItem(
-        "leaderboard",
-        JSON.stringify(data.leaderboard || [])
-      );
-
-      alert("✅ Vote envoyé + classement calculé");
-
-      // option : refresh UI
-      window.location.reload();
-
-    } catch (err) {
-      console.error(err);
-      alert("❌ Erreur envoi vote");
+      await onSubmit(formattedRanking);
     } finally {
       setLoadingSubmit(false);
     }
   };
 
-  // =========================
-  // OFFICIAL PUBLISH
-  // =========================
-  const publishOfficial = async () => {
-    try {
-      setLoadingPublish(true);
-
-      const res = await fetch(
-        "https://eurovision-back.onrender.com/votes/publish",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            results: items,
-            published: true,
-          }),
-        }
-      );
-
-      if (!res.ok) {
-        throw new Error();
-      }
-
-      alert("✅ Résultats publiés");
-
-      onPublish(items);
-    } catch (err) {
-      console.error(err);
-      alert("❌ Erreur publication");
-    } finally {
-      setLoadingPublish(false);
-    }
-  };
-
-  // =========================
-  // SIMULATION
-  // =========================
-  const publishFake = async () => {
-    try {
-      setLoadingSimulation(true);
-
-      const res = await fetch(
-        "https://eurovision-back.onrender.com/leaderboard/simulate",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            results: items.map((a) => ({
-              id: a.id,
-            })),
-          }),
-        }
-      );
-
-      if (!res.ok) {
-        throw new Error();
-      }
-
-      const data = await res.json();
-
-      console.log("🧪 SIMULATION RESULT:", data);
-
-      localStorage.setItem(
-        "simulation_leaderboard",
-        JSON.stringify(data)
-      );
-
-      alert("🧪 Simulation OK");
-    } catch (err) {
-      console.error(err);
-      alert("❌ Erreur simulation");
-    } finally {
-      setLoadingSimulation(false);
-    }
-  };
-
   return (
     <div>
-
       {/* LIST */}
       <DndContext
         sensors={sensors}
@@ -221,20 +101,13 @@ export default function VoteAdmin({
       </DndContext>
 
       {/* ACTIONS */}
-      <div className="space-y-3">
-
-        {/* SUBMIT VOTE */}
-        <button
-          onClick={submitVote}
-          disabled={loadingSubmit}
-          className="w-full py-3 rounded-xl bg-purple-500 text-white font-bold"
-        >
-          {loadingSubmit
-            ? "⏳ Envoi..."
-            : "🗳️ Envoyer vote"}
-        </button>
-
-      </div>
+      <button
+        onClick={handleSubmit}
+        disabled={loadingSubmit}
+        className="w-full py-3 rounded-xl bg-purple-500 text-white font-bold"
+      >
+        {loadingSubmit ? "⏳ Envoi..." : "🗳️ Envoyer vote"}
+      </button>
     </div>
   );
 }
