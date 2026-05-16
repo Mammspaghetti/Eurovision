@@ -44,7 +44,9 @@ class VoteCreate(BaseModel):
 class PublishResults(BaseModel):
     results: List[Dict]
     published: bool = True
-
+    
+class FinalVoteCreate(BaseModel):
+    ranking: List[Dict]
 
 # =========================================
 # HELPERS
