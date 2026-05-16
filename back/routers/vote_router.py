@@ -197,3 +197,23 @@ def get_vote(
         }
 
     return serialize_vote(vote)
+
+@router.get("/final")
+def get_final(db: Session = Depends(get_db)):
+
+    final = db.query(FinalResultDB).order_by(FinalResultDB.id.desc()).first()
+
+    if not final:
+        return {
+            "error": "no final results"
+        }
+
+    try:
+        results = json.loads(final.results)
+    except:
+        results = []
+
+    return {
+        "published": final.published,
+        "results": results
+    }
