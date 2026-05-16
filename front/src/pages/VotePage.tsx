@@ -38,7 +38,8 @@ const VotePage = () => {
   );
 
   const [voteStatus, setVoteStatus] = useState<"none" | "submitted">("none");
-
+  const [hasVote, setHasVote] = useState<boolean | null>(null);
+  
   const [published, setPublished] = useState(false);
   const [leaderboard, setLeaderboard] = useState<any[]>([]);
   const [finalResult, setFinalResult] = useState<any>(null);
@@ -63,20 +64,26 @@ const VotePage = () => {
 
       const data = await res.json();
 
-      if (!data.error) {
-        setVoteStatus(data.status);
-
-        if (data.ranking) {
-          const sorted = [...data.ranking]
-            .sort((a: any, b: any) => a.position - b.position)
-            .map((r: any) =>
-              defaultArtists.find((a) => a.id === r.artist_id)
-            )
-            .filter(Boolean);
-
-          setItems(sorted as Artist[]);
-        }
+      // CAS 1 : pas de vote
+      if (!data || data.error || !data.ranking?.length) {
+        setHasVote(false);
+        setVoteStatus("none");
+        setItems([...defaultArtists]); // 🔥 IMPORTANT
+        return;
       }
+
+      // CAS 2 : vote existant
+      setHasVote(true);
+      setVoteStatus(data.status);
+
+      const sorted = [...data.ranking]
+        .sort((a: any, b: any) => a.position - b.position)
+        .map((r: any) =>
+          defaultArtists.find((a) => a.id === r.artist_id)
+        )
+        .filter(Boolean);
+
+      setItems(sorted as Artist[]);
     };
 
     loadVote();
@@ -148,25 +155,28 @@ const VotePage = () => {
   // SUBMIT / UPDATE VOTE
   // =========================
   const handleSubmit = async () => {
-    const url = isSubmitted
+    if (!user?.id) return;
+
+    const payload = {
+      user_id: user.id,
+      ranking: items.map((a, i) => ({
+        artist_id: a.id,
+        position: i + 1,
+      })),
+    };
+
+    const url = hasVote
       ? "https://eurovision-back.onrender.com/votes/update"
       : "https://eurovision-back.onrender.com/votes/submit";
 
     await fetch(url, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        user_id: user.id,
-        ranking: items.map((a, i) => ({
-          artist_id: a.id,
-          position: i + 1,
-        })),
-      }),
+      body: JSON.stringify(payload),
     });
 
+    setHasVote(true);
     setVoteStatus("submitted");
-    setIsEditing(false);
-
     submitRanking(items);
   };
 

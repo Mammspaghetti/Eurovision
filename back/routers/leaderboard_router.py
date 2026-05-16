@@ -21,25 +21,35 @@ def calculate_score(user_ranking, real_results):
 
     score = 0
 
-    # map final positions (0-based)
-    final_map = {
-        str(a["artist_id"]): a["position"] - 1
-        for a in real_results
-    }
+    for user_idx, artist in enumerate(user_ranking):
+        real_idx = next(
+            (i for i, a in enumerate(real_results) if a["id"] == artist["artist_id"]),
+            None
+        )
 
-    for item in user_ranking:
-
-        artist_id = str(item["artist_id"])
-        user_pos = item["position"] - 1
-
-        real_pos = final_map.get(artist_id)
-
-        if real_pos is None:
+        if real_idx is None:
             continue
 
-        diff = abs(real_pos - user_pos)
+        # =========================
+        # PODIUM RULE (0,1,2)
+        # =========================
+        if user_idx < 3:
 
-        score += max(0, 100 - diff * 10)
+            if user_idx == real_idx:
+                score += 300  # exact podium position
+
+            elif real_idx < 3:
+                score += 200  # dans le podium mais mauvaise position
+
+            else:
+                score += 100  # hors podium mais encore acceptable
+
+        # =========================
+        # RESTE DU CLASSEMENT
+        # =========================
+        else:
+            diff = abs(real_idx - user_idx)
+            score += max(0, 100 - diff * 10)
 
     return score
 

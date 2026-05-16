@@ -6,69 +6,92 @@ type Props = {
 };
 
 const calculatePoints = (userIdx: number, realIdx: number) => {
+  if (userIdx < 3) {
+    if (userIdx === realIdx) return 300;
+    if (realIdx < 3) return 200;
+    return 100;
+  }
+
   const diff = Math.abs(realIdx - userIdx);
-  return Math.max(0, 100 - diff * 5);
+  return Math.max(0, 100 - diff * 10);
 };
 
-const ResultsComparison = ({
-  ranking,
-  realResults,
-}: Props) => {
+const getStatus = (diff: number) => {
+  if (diff === 0) return "perfect";
+  if (Math.abs(diff) <= 2) return "close";
+  return "bad";
+};
 
-  if (!ranking) return null;
+const ResultsComparison = ({ ranking, realResults }: Props) => {
+  if (!ranking?.length) return null;
 
   return (
-    <div className="space-y-2 mb-6">
+    <div className="space-y-3 mb-6">
 
       {ranking.map((artist, userIdx) => {
-
-        const realIdx =
-          realResults.findIndex(
-            a => a.id === artist.id
-          );
-
-        const points =
-          calculatePoints(userIdx, realIdx);
+        const realIdx = realResults.findIndex(a => a.id === artist.id);
 
         const diff = realIdx - userIdx;
+        const points = calculatePoints(userIdx, realIdx);
 
-        const color =
-          diff === 0
-            ? "border-green-400/40 bg-green-500/10"
-            : Math.abs(diff) <= 2
-              ? "border-orange-400/40 bg-orange-500/10"
-              : "border-violet-400/30 bg-violet-500/10";
+        const status = getStatus(diff);
+
+        const cardStyle =
+          status === "perfect"
+            ? "border-green-400 bg-green-500/10"
+            : status === "close"
+              ? "border-orange-400 bg-orange-500/10"
+              : "border-violet-400 bg-violet-500/10";
+
+        const badge =
+          status === "perfect"
+            ? "🟢 Parfait"
+            : status === "close"
+              ? "🟠 Proche"
+              : "🔴 Écarté";
 
         return (
           <div
             key={artist.id}
-            className={`flex justify-between p-3 rounded-lg border ${color}`}
+            className={`p-3 rounded-xl border flex items-center justify-between ${cardStyle}`}
           >
 
-            <div>
-              #{userIdx + 1} {artist.artist}
+            {/* LEFT */}
+            <div className="flex flex-col">
+              <div className="font-semibold">
+                #{userIdx + 1} — {artist.artist}
+              </div>
+
+              <div className="text-xs opacity-70">
+                {badge}
+              </div>
             </div>
 
-            <div>
-              {diff === 0
-                ? "✓"
-                : diff > 0
-                  ? `- ${Math.abs(diff)}`
-                  : `+ ${Math.abs(diff)}`}
+            {/* CENTER */}
+            <div className="text-center text-sm">
+              <div className="font-bold">
+                Réel #{realIdx + 1}
+              </div>
+
+              <div className="text-xs opacity-70">
+                Δ {diff > 0 ? "+" : ""}{diff}
+              </div>
             </div>
 
-            <div>
-              #{realIdx + 1}
-            </div>
+            {/* RIGHT */}
+            <div className="text-right">
+              <div className="text-lg font-bold text-primary">
+                +{points}
+              </div>
 
-            <div className="font-bold">
-              +{points}
+              <div className="text-xs opacity-70">
+                pts
+              </div>
             </div>
 
           </div>
         );
       })}
-
     </div>
   );
 };
