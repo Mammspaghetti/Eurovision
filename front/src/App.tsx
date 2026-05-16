@@ -22,6 +22,7 @@ const App = () => (
         <AppProvider> {/* 👈 OBLIGATOIRE */}
           <Routes>
             <Route path="/" element={<LoginPage />} />
+            <Route path="/register" element={<CreateAcountPage />} />
             <Route path="/admin" element={<AdminPage />} />
             <Route path="/vote" element={<VotePage />} />
             <Route path="/results" element={<ResultsPage />} />
