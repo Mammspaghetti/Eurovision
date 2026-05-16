@@ -102,7 +102,7 @@ def create_or_update_vote(
 
 
 # =========================================
-# SUBMIT FINAL VOTE
+# SUBMIT VOTE
 # =========================================
 @router.post("/submit")
 def submit_vote(payload: VoteCreate, db: Session = Depends(get_db)):
@@ -134,6 +134,31 @@ def submit_vote(payload: VoteCreate, db: Session = Depends(get_db)):
         }
     }
 
+# =========================================
+# SUBMIT FINAL VOTE ID == 1 et ADMIN
+# =========================================
+@router.post("/submit/final")
+def submit_final(payload: VoteCreate, db: Session = Depends(get_db)):
+
+    # 🔥 on écrase toujours le dernier final (option simple)
+    db.query(FinalResultDB).delete()
+
+    final = FinalResultDB(
+        results=json.dumps([
+            r.model_dump() for r in payload.ranking
+        ]),
+        published=True
+    )
+
+    db.add(final)
+    db.commit()
+    db.refresh(final)
+
+    return {
+        "message": "final saved",
+        "results": payload.ranking,
+        "published": final.published
+    }
 
 # =========================================
 # GET ALL VOTES

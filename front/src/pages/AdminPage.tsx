@@ -103,14 +103,13 @@ export default function AdminPage() {
   const submitVote = async (ranking: any[]) => {
     try {
       const res = await fetch(
-        "https://eurovision-back.onrender.com/votes/submit",
+        "https://eurovision-back.onrender.com/votes/submit/final",
         {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            user_id: 1,
             ranking,
           }),
         }
@@ -120,16 +119,15 @@ export default function AdminPage() {
 
       const data = await res.json();
 
-      console.log("📊 RESULT:", data);
+      console.log("📊 FINAL RESULT:", data);
 
-      // refresh propre
       await fetchUsersAndVotes();
       await fetchLeaderboard();
 
-      alert("✅ Vote envoyé");
+      alert("✅ Résultat final publié");
     } catch (err) {
       console.error(err);
-      alert("❌ Erreur envoi vote");
+      alert("❌ Erreur publication final");
     }
   };
 
