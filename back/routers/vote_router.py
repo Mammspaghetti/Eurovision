@@ -44,7 +44,7 @@ class VoteCreate(BaseModel):
 class PublishResults(BaseModel):
     results: List[Dict]
     published: bool = True
-
+    
 class FinalVoteCreate(BaseModel):
     ranking: List[Dict]
 
@@ -142,15 +142,11 @@ def submit_vote(payload: VoteCreate, db: Session = Depends(get_db)):
 @router.post("/submit/final")
 def submit_final(payload: FinalVoteCreate, db: Session = Depends(get_db)):
 
+    # supprime ancien final
     db.query(FinalResultDB).delete()
-    db.commit()
-
-    safe_ranking = [
-        dict(r) for r in payload.ranking
-    ]
 
     final = FinalResultDB(
-        results=json.dumps(safe_ranking),
+        results=json.dumps(payload.ranking),
         published=True
     )
 
@@ -160,7 +156,7 @@ def submit_final(payload: FinalVoteCreate, db: Session = Depends(get_db)):
 
     return {
         "message": "final saved",
-        "results": safe_ranking,
+        "results": payload.ranking,
         "published": final.published
     }
 
