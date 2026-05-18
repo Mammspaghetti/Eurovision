@@ -1,91 +1,149 @@
-import { Artist } from "@/data/artists";
+import { Artist, artists as allArtists } from "@/data/artists";
 
 type Props = {
   ranking: Artist[];
-  realResults: Artist[];
+  realResults: any[];
 };
 
-const calculatePoints = (userIdx: number, realIdx: number) => {
-  if (userIdx < 3) {
-    if (userIdx === realIdx) return 300;
-    if (realIdx < 3) return 200;
-    return 100;
-  }
+// =========================
+// SCORE (backend-like)
+// =========================
+const calculatePoints = (diff: number) => {
+  const abs = Math.abs(diff);
 
-  const diff = Math.abs(realIdx - userIdx);
-  return Math.max(0, 100 - diff * 10);
+  if (abs === 0) return 300;
+  if (abs <= 2) return 200;
+  if (abs <= 5) return 100;
+  return Math.max(0, 50 - abs * 2);
 };
 
-const getStatus = (diff: number) => {
-  if (diff === 0) return "perfect";
-  if (Math.abs(diff) <= 2) return "close";
-  return "bad";
+const getArrow = (diff: number) => {
+  if (diff > 0) return "⬇"; // user trop haut → real plus bas
+  if (diff < 0) return "⬆"; // user trop bas → real plus haut
+  return "➡";
 };
 
 const ResultsComparison = ({ ranking, realResults }: Props) => {
-  if (!ranking?.length) return null;
+  if (!ranking?.length || !realResults?.length) return null;
+
+  // =========================
+  // REAL MAP (artist_id → position)
+  // =========================
+  const realMap = new Map(
+    realResults.map((r) => [String(r.artist_id), r.position])
+  );
+
+  // =========================
+  // ARTIST MAP (source data)
+  // =========================
+  const artistMap = new Map(
+    allArtists.map((a: any) => [String(a.id), a])
+  );
 
   return (
     <div className="space-y-3 mb-6">
 
       {ranking.map((artist, userIdx) => {
-        const realIdx = realResults.findIndex(a => a.id === artist.id);
+        const artistId = String(artist.id);
 
-        const diff = realIdx - userIdx;
-        const points = calculatePoints(userIdx, realIdx);
+        const userPos = userIdx + 1;
+        const realPos = realMap.get(artistId);
 
-        const status = getStatus(diff);
+        if (realPos === undefined) return null;
+
+        const diff = realPos - userPos;
+        const points = calculatePoints(diff);
+
+        const status =
+          diff === 0
+            ? "perfect"
+            : Math.abs(diff) <= 2
+              ? "close"
+              : "bad";
+
+        const realArtist = artistMap.get(artistId);
+        const userArtist = artist;
 
         const cardStyle =
           status === "perfect"
             ? "border-green-400 bg-green-500/10"
             : status === "close"
               ? "border-orange-400 bg-orange-500/10"
-              : "border-violet-400 bg-violet-500/10";
-
-        const badge =
-          status === "perfect"
-            ? "🟢 Parfait"
-            : status === "close"
-              ? "🟠 Proche"
-              : "🔴 Écarté";
+              : "border-red-400 bg-red-500/10";
 
         return (
           <div
             key={artist.id}
-            className={`p-3 rounded-xl border flex items-center justify-between ${cardStyle}`}
+            className={`grid grid-cols-5 items-center p-3 rounded-xl border gap-2 ${cardStyle}`}
           >
 
-            {/* LEFT */}
-            <div className="flex flex-col">
-              <div className="font-semibold">
-                #{userIdx + 1} — {artist.artist}
+            {/* =========================
+                REAL (FINAL) - TOP
+            ========================= */}
+            <div>
+              <div className="font-bold text-primary">
+                #{realPos}
               </div>
-
+              <div className="text-sm font-semibold">
+                {realArtist?.artist}
+              </div>
               <div className="text-xs opacity-70">
-                {badge}
+                {realArtist?.country}
+              </div>
+              <div className="text-xs opacity-60">
+                Real (Final)
               </div>
             </div>
 
-            {/* CENTER */}
-            <div className="text-center text-sm">
+            {/* =========================
+                USER VOTE
+            ========================= */}
+            <div>
               <div className="font-bold">
-                Réel #{realIdx + 1}
+                #{userPos}
               </div>
-
+              <div className="text-sm">
+                {userArtist.artist}
+              </div>
               <div className="text-xs opacity-70">
-                Δ {diff > 0 ? "+" : ""}{diff}
+                {userArtist.country}
+              </div>
+              <div className="text-xs opacity-60">
+                User
               </div>
             </div>
 
-            {/* RIGHT */}
-            <div className="text-right">
-              <div className="text-lg font-bold text-primary">
+            {/* =========================
+                DIFF
+            ========================= */}
+            <div className="text-center">
+              <div className="text-lg font-bold">
+                {getArrow(diff)} {diff > 0 ? "-" : diff < 0 ? "+" : ""}
+                {Math.abs(diff)}
+              </div>
+
+              <div className="text-xs opacity-70">
+                Δ position
+              </div>
+
+              <div className="text-xs font-semibold">
+                {status === "perfect"
+                  ? "🟢 Exact"
+                  : status === "close"
+                    ? "🟠 Proche"
+                    : "🔴 Écarté"}
+              </div>
+            </div>
+
+            {/* =========================
+                POINTS
+            ========================= */}
+            <div className="text-right col-span-2">
+              <div className="text-xl font-bold text-primary">
                 +{points}
               </div>
-
               <div className="text-xs opacity-70">
-                pts
+                points gagnés
               </div>
             </div>
 

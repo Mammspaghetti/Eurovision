@@ -19,37 +19,61 @@ def get_db():
 
 def calculate_score(user_ranking, real_results):
 
+    # =========================
+    # MAP REAL RESULTS
+    # =========================
+    real_map = {
+        str(item["artist_id"]): item["position"]
+        for item in real_results
+        if isinstance(item, dict)
+    }
+
     score = 0
+    n = len(real_results)
 
-    for user_idx, artist in enumerate(user_ranking):
-        real_idx = next(
-            (i for i, a in enumerate(real_results) if a["id"] == artist["artist_id"]),
-            None
-        )
+    for user_item in user_ranking:
 
-        if real_idx is None:
+        artist_id = str(user_item.get("artist_id"))
+        user_pos = user_item.get("position")
+
+        if artist_id not in real_map:
             continue
 
-        # =========================
-        # PODIUM RULE (0,1,2)
-        # =========================
-        if user_idx < 3:
-
-            if user_idx == real_idx:
-                score += 300  # exact podium position
-
-            elif real_idx < 3:
-                score += 200  # dans le podium mais mauvaise position
-
-            else:
-                score += 100  # hors podium mais encore acceptable
+        real_pos = real_map[artist_id]
+        diff = abs(user_pos - real_pos)
 
         # =========================
-        # RESTE DU CLASSEMENT
+        # BASE SCORE (amélioré)
         # =========================
+        if diff == 0:
+            score += 300
+
+        elif diff <= 2:
+            score += 200
+
+        elif diff <= 5:
+            score += 100
+
         else:
-            diff = abs(real_idx - user_idx)
-            score += max(0, 100 - diff * 10)
+            # 🔥 remplace ton linear fallback par une décroissance plus propre
+            score += max(0, 80 - (diff * 3))
+
+        # =========================
+        # BONUS SYSTEM (nouveau)
+        # =========================
+
+        # TOP 3 bonus
+        if real_pos <= 3:
+            score += 50
+
+        # LAST bonus (anti-oubli stratégique)
+        if real_pos == n:
+            score += 100
+
+        # 🔥 bonus de "bonne direction"
+        # (petit bonus si pas trop loin même hors threshold)
+        if diff <= 8:
+            score += 10
 
     return score
 
@@ -68,11 +92,17 @@ def recalculate_leaderboard(db: Session = Depends(get_db)):
 
     votes = db.query(VoteDB).all()
 
-    db.query(LeaderboardDB).delete()
+    # =========================
+    # RESET LEADERBOARD
+    # =========================
+    db.query(LeaderboardDB).delete(synchronize_session=False)
     db.commit()
 
-    leaderboard = []
+    db_rows = []
 
+    # =========================
+    # CREATE SCORES
+    # =========================
     for v in votes:
 
         try:
@@ -82,37 +112,39 @@ def recalculate_leaderboard(db: Session = Depends(get_db)):
 
         score = calculate_score(ranking, real_results)
 
-        lb = LeaderboardDB(
+        row = LeaderboardDB(
             user_id=v.user_id,
             score=score
         )
 
-        db.add(lb)
-
-        leaderboard.append({
-            "user_id": v.user_id,
-            "score": score
-        })
+        db.add(row)
+        db_rows.append(row)
 
     db.commit()
 
-    leaderboard.sort(key=lambda x: x["score"], reverse=True)
+    # =========================
+    # SORT + RANK + STATUS
+    # =========================
+    db_rows.sort(key=lambda x: x.score, reverse=True)
 
-    total = len(leaderboard)
+    total = len(db_rows)
 
-    for i, u in enumerate(leaderboard):
-        u["rank"] = i + 1
-        u["total"] = total
+    for i, row in enumerate(db_rows):
 
-        u["status"] = (
-            "WINNER" if i == 0
-            else "TOP_10" if i < total * 0.1
-            else "LOSER"
-        )
+        row.rank = i + 1
+
+        if i == 0:
+            row.status = "WINNER"
+        elif i < total * 0.1:
+            row.status = "TOP_10"
+        else:
+            row.status = "LOSER"
+
+    db.commit()
 
     return {
-        "message": "ok",
-        "leaderboard": leaderboard
+        "message": "leaderboard updated",
+        "total_users": total
     }
 
 @leaderboard_router.get("/")
